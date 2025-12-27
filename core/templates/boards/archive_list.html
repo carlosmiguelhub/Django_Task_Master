@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Archive • Task Master{% endblock %}
+
+{% block body %}
+<div class="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8">
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Archive</h1>
+      <p class="mt-1 text-sm text-slate-500">All archived completed tasks.</p>
+    </div>
+    <a href="{% url 'boards:list' %}" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+      Back to Boards
+    </a>
+  </div>
+
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    {% for t in tasks %}
+      <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="truncate text-lg font-semibold text-slate-900">{{ t.title }}</h3>
+            <p class="mt-1 text-sm text-slate-500 truncate">Board: {{ t.board.name }}</p>
+          </div>
+          <span class="text-xs font-semibold text-slate-500">DONE</span>
+        </div>
+
+        <div class="mt-4 flex items-center gap-2">
+          {% if t.completed_late %}
+            <span class="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">Completed Late</span>
+          {% else %}
+            <span class="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Completed On Time</span>
+          {% endif %}
+          {% if t.completed_at %}
+            <span class="text-xs text-slate-500">{{ t.completed_at|date:"M d, Y" }} • {{ t.completed_at|time:"g:i a" }}</span>
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+        <p class="text-slate-900 font-semibold">No archived tasks yet</p>
+        <p class="mt-1 text-sm text-slate-500">Archive completed tasks to see them here.</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

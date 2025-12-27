@@ -1,3 +1,4 @@
+{# boards/partials/task_card_detail.html #}
 <div class="task"
      data-created="{{ t.created_at|date:'c' }}"
      data-due="{% if t.due_date and t.due_time %}{{ t.due_date|date:'Y-m-d' }}T{{ t.due_time|time:'H:i' }}:00{% endif %}">
@@ -21,26 +22,54 @@
     </div>
   </div>
 
-  <div class="overdue">
-    ⚠ Overdue
-  </div>
+  {# ✅ Only show overdue UI for non-done tasks (JS will toggle it) #}
+  {% if t.status != "done" %}
+    <div class="overdue">
+      ⚠ Overdue
+    </div>
+  {% endif %}
 
   <div class="bar-wrap">
     <div class="bar"></div>
   </div>
 
-  <div class="task-actions">
-  {% if t.status == "pending" %}
-    <form method="post" action="{% url 'boards:task_start' t.id %}">
-      {% csrf_token %}
-      <button type="submit" class="task-btn start">Start</button>
-    </form>
-  {% elif t.status == "in_progress" %}
-    <form method="post" action="{% url 'boards:task_complete' t.id %}">
-      {% csrf_token %}
-      <button type="submit" class="task-btn complete">✓ Complete</button>
-    </form>
-  {% endif %}
-</div>
+  {# ✅ DONE: show completion badge + archive button #}
+  {% if t.status == "done" %}
+    <div class="task-actions" style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      {% if t.completed_late %}
+        <span class="tag high" style="margin-top:0;">Completed Late</span>
+      {% else %}
+        <span class="tag low" style="margin-top:0;">Completed On Time</span>
+      {% endif %}
 
+      {% if t.completed_at %}
+        <span style="font-size:12px; font-weight:600; color:#64748b;">
+          {{ t.completed_at|date:"M d, Y" }}, {{ t.completed_at|time:"g:i a" }}
+        </span>
+      {% endif %}
+    </div>
+
+    {# ✅ Archive ONLY in Done and only if not archived #}
+    {% if not t.is_archived %}
+      <form method="post" action="{% url 'boards:task_archive' t.id %}" style="margin-top:10px;">
+        {% csrf_token %}
+        <button type="submit" class="task-btn">Archive</button>
+      </form>
+    {% endif %}
+
+  {% else %}
+    <div class="task-actions">
+      {% if t.status == "pending" %}
+        <form method="post" action="{% url 'boards:task_start' t.id %}">
+          {% csrf_token %}
+          <button type="submit" class="task-btn start">Start</button>
+        </form>
+      {% elif t.status == "in_progress" %}
+        <form method="post" action="{% url 'boards:task_complete' t.id %}">
+          {% csrf_token %}
+          <button type="submit" class="task-btn complete">✓ Complete</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
 </div>

@@ -17,8 +17,10 @@
     <!-- Nav -->
     <nav class="mt-10 flex flex-col gap-2 px-2.5 text-xl">
 
-      <a href="{% url 'boards:list' %}" class="...">📋 <span class="sidebar-label">Boards</span></a>
-
+      <a href="{% url 'boards:list' %}"
+         class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100">
+        📋 <span class="sidebar-label">Boards</span>
+      </a>
 
       <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100">
         📅 <span class="sidebar-label">Planner</span>
@@ -34,7 +36,6 @@
   <!-- MAIN CONTENT -->
   <main class="flex-1 min-w-0 px-10 py-8">
 
-    <!-- ❌ NO max-width wrapper -->
     <div class="w-full">
 
       <!-- Header -->
@@ -48,13 +49,13 @@
         </p>
       </div>
 
-      <!-- STATS (DESKTOP FIXED) -->
+      <!-- STATS -->
       <div class="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
         <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase text-slate-500">Total Tasks</p>
           <div class="mt-3 flex justify-between items-center">
-            <span class="text-3xl font-semibold">1</span>
+            <span class="text-3xl font-semibold">{{ counts.total|default:0 }}</span>
             <span class="text-emerald-500 text-xl">✔</span>
           </div>
         </div>
@@ -62,7 +63,7 @@
         <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase text-slate-500">In Progress</p>
           <div class="mt-3 flex justify-between items-center">
-            <span class="text-3xl font-semibold">0</span>
+            <span class="text-3xl font-semibold">{{ counts.in_progress|default:0 }}</span>
             <span class="text-amber-500 text-xl">⏱</span>
           </div>
         </div>
@@ -70,7 +71,7 @@
         <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase text-slate-500">Pending</p>
           <div class="mt-3 flex justify-between items-center">
-            <span class="text-3xl font-semibold">1</span>
+            <span class="text-3xl font-semibold">{{ counts.pending|default:0 }}</span>
             <span class="text-indigo-500 text-xl">📁</span>
           </div>
         </div>
@@ -78,7 +79,7 @@
         <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <p class="text-xs uppercase text-slate-500">Completed</p>
           <div class="mt-3 flex justify-between items-center">
-            <span class="text-3xl font-semibold">0</span>
+            <span class="text-3xl font-semibold">{{ counts.done|default:0 }}</span>
             <span class="text-blue-500 text-xl">📈</span>
           </div>
         </div>

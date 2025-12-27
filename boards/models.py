@@ -17,6 +17,8 @@ class Board(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
 class Task(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -31,8 +33,8 @@ class Task(models.Model):
     board = models.ForeignKey(
         Board,
         on_delete=models.CASCADE,
-        related_name="boards_tasks",
-        related_query_name="boards_task",
+        related_name="tasks",  # accessor: board.tasks
+        related_query_name="tasks",  # query path: Count("tasks")
     )
 
     title = models.CharField(max_length=200)
@@ -55,6 +57,13 @@ class Task(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # ✅ completion tracking
+    completed_at = models.DateTimeField(null=True, blank=True)
+    completed_late = models.BooleanField(default=False)
+
+    # ✅ NEW: archive support
+    is_archived = models.BooleanField(default=False)
+
     class Meta:
         ordering = ["-created_at"]
 
@@ -70,6 +79,7 @@ class Task(models.Model):
         """
         if not self.due_date:
             return None
+
         import datetime
         t = self.due_time or datetime.time(23, 59)
         return datetime.datetime.combine(self.due_date, t)

@@ -19,7 +19,13 @@ class Task(models.Model):
         MEDIUM = "MEDIUM", "Medium"
         HIGH = "HIGH", "High"
 
-    board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name="tasks")
+    board = models.ForeignKey(
+        "boards.Board",
+        on_delete=models.CASCADE,
+        related_name="legacy_tasks",
+        related_query_name="legacy_tasks",
+    )
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
