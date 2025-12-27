@@ -1,0 +1,45 @@
+<div class="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+  <!-- Left marketing -->
+  <div class="hidden lg:flex flex-col justify-between p-12 bg-white">
+    <div>
+      <div class="inline-flex items-center gap-2">
+        <div class="h-10 w-10 rounded-xl bg-slate-900"></div>
+        <div class="text-lg font-semibold tracking-tight">Task Master</div>
+      </div>
+
+      <h1 class="mt-10 text-4xl font-semibold tracking-tight leading-tight">
+        Manage tasks, boards, and plans in one clean workspace.
+      </h1>
+
+      <p class="mt-4 text-slate-600 max-w-md">
+        Create boards for your projects, track progress, and plan upcoming schedules like a calendar app.
+      </p>
+
+      <div class="mt-10 grid grid-cols-1 gap-4 max-w-md">
+        <div class="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+          <div class="font-medium">Boards</div>
+          <div class="text-sm text-slate-600 mt-1">Group tasks by subject, project, or goals.</div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+          <div class="font-medium">Dashboard</div>
+          <div class="text-sm text-slate-600 mt-1">Instant view of Pending / In progress / Completed.</div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+          <div class="font-medium">Planner</div>
+          <div class="text-sm text-slate-600 mt-1">Add events with start/end times like Google Calendar.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-sm text-slate-500">
+      © {% now "Y" %} Task Master. All rights reserved.
+    </div>
+  </div>
+
+  <!-- Right form -->
+  <div class="flex items-center justify-center p-6 lg:p-12">
+    <div class="w-full max-w-md">
+      {% block auth_content %}{% endblock %}
+    </div>
+  </div>
+</div>

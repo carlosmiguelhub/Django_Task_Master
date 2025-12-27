@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Dashboard • Task Master{% endblock %}
+
+{% block body %}
+<div class="flex min-h-screen bg-slate-50 text-slate-900">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar"
+    class="relative w-64 shrink-0 border-r border-slate-200 bg-white transition-all duration-300">
+
+    <!-- Toggle -->
+    <button id="toggleSidebar"
+      class="absolute -right-3 top-6 z-10 flex h-6 w-6 items-center justify-center rounded-full border bg-white text-slate-500 shadow hover:text-slate-700">
+      ‹
+    </button>
+
+    <!-- Nav -->
+    <nav class="mt-10 flex flex-col gap-2 px-2.5 text-xl">
+
+      <a href="{% url 'boards:list' %}" class="...">📋 <span class="sidebar-label">Boards</span></a>
+
+
+      <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100">
+        📅 <span class="sidebar-label">Planner</span>
+      </a>
+
+      <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100">
+        📊 <span class="sidebar-label">Analytics</span>
+      </a>
+
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 min-w-0 px-10 py-8">
+
+    <!-- ❌ NO max-width wrapper -->
+    <div class="w-full">
+
+      <!-- Header -->
+      <div>
+        <h1 class="text-3xl font-semibold tracking-tight">
+          Welcome back,
+          <span class="text-indigo-600">{{ request.user.username }}</span> 👋
+        </h1>
+        <p class="mt-1 text-sm text-slate-500">
+          Here’s a calm overview of your workspace today.
+        </p>
+      </div>
+
+      <!-- STATS (DESKTOP FIXED) -->
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+
+        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase text-slate-500">Total Tasks</p>
+          <div class="mt-3 flex justify-between items-center">
+            <span class="text-3xl font-semibold">1</span>
+            <span class="text-emerald-500 text-xl">✔</span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase text-slate-500">In Progress</p>
+          <div class="mt-3 flex justify-between items-center">
+            <span class="text-3xl font-semibold">0</span>
+            <span class="text-amber-500 text-xl">⏱</span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase text-slate-500">Pending</p>
+          <div class="mt-3 flex justify-between items-center">
+            <span class="text-3xl font-semibold">1</span>
+            <span class="text-indigo-500 text-xl">📁</span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <p class="text-xs uppercase text-slate-500">Completed</p>
+          <div class="mt-3 flex justify-between items-center">
+            <span class="text-3xl font-semibold">0</span>
+            <span class="text-blue-500 text-xl">📈</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- NEXT PLAN -->
+      <div class="mt-10 w-full max-w-2xl rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <div class="flex justify-between items-center">
+          <h2 class="text-lg font-semibold">Next Plan</h2>
+          <a class="text-sm text-indigo-600 hover:underline">
+            View Planner →
+          </a>
+        </div>
+        <p class="mt-3 text-sm text-slate-500">
+          No upcoming plans. Create one in your planner.
+        </p>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Sidebar toggle -->
+<script>
+  const sidebar = document.getElementById("sidebar");
+  const toggle = document.getElementById("toggleSidebar");
+
+  toggle.onclick = () => {
+    sidebar.classList.toggle("w-64");
+    sidebar.classList.toggle("w-16");
+
+    sidebar.querySelectorAll(".sidebar-label")
+      .forEach(el => el.classList.toggle("hidden"));
+
+    toggle.textContent = toggle.textContent === "‹" ? "›" : "‹";
+  };
+</script>
+{% endblock %}

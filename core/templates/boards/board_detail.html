@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% block title %}{{ board.name }} • Task Master{% endblock %}
+
+{% block body %}
+<style>
+  /* --- layout --- */
+  .wrap { max-width: 1536px; margin: 0 auto; padding: 26px 16px; }
+  @media (min-width: 640px){ .wrap{ padding: 26px 24px; } }
+
+  .topbar { display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:center; }
+  .back { display:inline-flex; align-items:center; gap:10px; color:#4f46e5; font-weight:900; text-decoration:none; }
+  .back:hover { text-decoration: underline; }
+
+  .actions { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .btn {
+    border-radius: 12px; padding: 10px 14px; font-weight: 900;
+    border:1px solid #e2e8f0; background:#fff; cursor:pointer;
+    display:inline-flex; gap:10px; align-items:center;
+  }
+  .btn:hover { background:#f8fafc; }
+  .btn.dark { background:#0f172a; border-color:#0f172a; color:#fff; }
+  .btn.dark:hover { opacity:.95; }
+  .btn.purple { background:#7c3aed; border-color:#7c3aed; color:#fff; }
+  .btn.purple:hover { opacity:.95; }
+  .btn.blue { background:#4f46e5; border-color:#4f46e5; color:#fff; }
+  .btn.blue:hover { opacity:.95; }
+
+  /* --- columns --- */
+  .cols { margin-top: 18px; display:grid; gap:16px; grid-template-columns: 1fr; }
+  @media (min-width: 1024px){ .cols{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
+
+  .col {
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius: 18px;
+    overflow:hidden;
+    box-shadow: 0 1px 2px rgba(15,23,42,.06);
+  }
+  .col-head {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    background: rgba(255,255,255,.7);
+    backdrop-filter: blur(6px);
+  }
+  .col-title { display:flex; gap:10px; align-items:center; font-weight: 1000; color:#0f172a; }
+  .icon {
+    width: 32px; height: 32px; border-radius: 12px;
+    display:flex; align-items:center; justify-content:center;
+    background:#fff; border:1px solid #e2e8f0; color:#4f46e5;
+  }
+  .pill { font-size: 12px; font-weight: 1000; padding: 6px 10px; border-radius: 999px; border:1px solid #e2e8f0; background:#fff; }
+  .pill.pending { background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+  .pill.progress { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+  .pill.done { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
+
+  .col-body { padding: 14px; max-height: 72vh; overflow:auto; }
+  .empty { color:#64748b; font-size: 14px; padding: 18px; border-radius: 14px; border:1px dashed #cbd5e1; background:#fff; }
+
+  /* --- task card --- */
+  .task {
+    background:#fff; border:1px solid #e2e8f0; border-radius: 16px;
+    padding: 14px; box-shadow: 0 1px 2px rgba(15,23,42,.05);
+    margin-bottom: 12px;
+  }
+  .task:last-child{ margin-bottom:0; }
+  .task-top { display:flex; justify-content:space-between; gap:12px; }
+  .task-title { margin:0; font-size: 16px; font-weight: 1000; color:#0f172a; }
+  .task-date { font-size: 12px; font-weight: 800; color:#64748b; margin-top: 6px; text-align:right; }
+
+  .tag { display:inline-flex; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 1000; border:1px solid #e2e8f0; margin-top: 6px; }
+  .tag.normal { background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+  .tag.high { background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
+  .tag.low { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+
+  .overdue { margin-top: 10px; display:none; gap:8px; align-items:center; color:#dc2626; font-weight: 1000; font-size: 13px; }
+
+  .bar-wrap { margin-top: 10px; height: 8px; border-radius: 999px; background:#e5e7eb; overflow:hidden; }
+  .bar { height:100%; width:0%; border-radius:999px; background:#0f172a; transition: width .6s ease; }
+
+  .task-actions { margin-top: 12px; display:flex; gap:10px; }
+  .task-btn {
+    border-radius: 10px; padding: 8px 12px; font-weight: 1000; font-size: 13px;
+    border:1px solid #e2e8f0; background:#fff; cursor:pointer;
+  }
+  .task-btn:hover { background:#f8fafc; }
+  .task-btn.start { background:#fbbf24; border-color:#fbbf24; color:#111827; }
+  .task-btn.complete { background:#22c55e; border-color:#22c55e; color:#fff; }
+
+  /* --- modal --- */
+  .backdrop { position: fixed; inset:0; z-index:9998; background: rgba(15,23,42,.55); backdrop-filter: blur(6px); display:none; }
+  .modal { position: fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; padding:18px; overflow:auto; }
+  .open { display:flex; }
+  .modal-card {
+    width:100%; max-width: 560px; background:#fff; border:1px solid #e2e8f0; border-radius:18px;
+    box-shadow: 0 18px 50px rgba(15,23,42,.18);
+    transform: scale(.98); opacity:0; animation: pop .18s ease forwards;
+  }
+  @keyframes pop { to { transform: scale(1); opacity:1; } }
+  .modal-head { display:flex; justify-content:space-between; align-items:center; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; }
+  .modal-title { margin:0; font-size: 20px; font-weight: 1000; color:#4f46e5; }
+  .xbtn { width:42px; height:42px; border-radius:14px; border:1px solid #e2e8f0; background:#fff; cursor:pointer; }
+  .xbtn:hover { background:#f8fafc; }
+  .modal-body { padding: 16px 18px; }
+  .field { margin-bottom: 12px; }
+  .label { display:block; font-size: 13px; font-weight: 1000; color:#334155; margin-bottom: 6px; }
+  .input, .select {
+    width:100%; border:1px solid #e2e8f0; border-radius: 12px; padding: 12px 12px; font-size: 14px; outline:none;
+    background:#f8fafc;
+  }
+  .input:focus, .select:focus { border-color:#4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); background:#fff; }
+  .row2 { display:grid; gap:12px; grid-template-columns: 1fr; }
+  @media(min-width:640px){ .row2 { grid-template-columns: 1fr 1fr; } }
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; padding-top: 12px; }
+  .err { color:#dc2626; font-size: 13px; font-weight: 900; margin-top: 6px; }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="/app/dashboard/">
+      <span style="font-size:18px;">←</span> Back to Dashboard
+    </a>
+
+    <div class="actions">
+      <button class="btn dark" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 8v13H3V8"></path><path d="M1 3h22v5H1z"></path><path d="M10 12h4"></path>
+        </svg>
+        View Archive
+      </button>
+
+      <button class="btn purple" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <path d="M14 2v6h6"></path>
+        </svg>
+        View Documents
+      </button>
+
+      <button id="openTaskModal" class="btn blue" type="button">
+        <span style="font-size:18px; line-height:0;">+</span> Add Task
+      </button>
+    </div>
+  </div>
+
+  <div class="cols">
+
+    <!-- Pending -->
+    <section class="col">
+      <div class="col-head">
+        <div class="col-title">
+          <div class="icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path>
+            </svg>
+          </div>
+          Pending
+        </div>
+        <div class="pill pending">{{ pending|length }} task{{ pending|length|pluralize }}</div>
+      </div>
+      <div class="col-body">
+        {% if pending %}
+          {% for t in pending %}
+            {% include "boards/partials/task_card_detail.html" with t=t %}
+          {% endfor %}
+        {% else %}
+          <div class="empty">No tasks here yet. Drag or create a task to get started.</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- In Progress -->
+    <section class="col">
+      <div class="col-head">
+        <div class="col-title">
+          <div class="icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path>
+            </svg>
+          </div>
+          In Progress
+        </div>
+        <div class="pill progress">{{ progress|length }} task{{ progress|length|pluralize }}</div>
+      </div>
+      <div class="col-body">
+        {% if progress %}
+          {% for t in progress %}
+            {% include "boards/partials/task_card_detail.html" with t=t %}
+          {% endfor %}
+        {% else %}
+          <div class="empty">No tasks here yet. Drag or create a task to get started.</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Done -->
+    <section class="col">
+      <div class="col-head">
+        <div class="col-title">
+          <div class="icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle><path d="M8 12l3 3 5-6"></path>
+            </svg>
+          </div>
+          Done
+        </div>
+        <div class="pill done">{{ done|length }} task{{ done|length|pluralize }}</div>
+      </div>
+      <div class="col-body">
+        {% if done %}
+          {% for t in done %}
+            {% include "boards/partials/task_card_detail.html" with t=t %}
+          {% endfor %}
+        {% else %}
+          <div class="empty">No tasks here yet. Drag or create a task to get started.</div>
+        {% endif %}
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="taskBackdrop" class="backdrop"></div>
+<div id="taskModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 class="modal-title">Add Task</h2>
+      <button type="button" class="xbtn" id="closeTaskModal">✕</button>
+    </div>
+
+    <form method="post" class="modal-body" id="taskForm">
+      {% csrf_token %}
+
+      <div class="field">
+        <label class="label">Task title</label>
+        <input class="input" name="title" placeholder="Task title" required />
+        {% if form.title.errors %}<div class="err">{{ form.title.errors|striptags }}</div>{% endif %}
+      </div>
+
+      <div class="field">
+        <label class="label">Priority</label>
+        <select class="select" name="priority" required>
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+        {% if form.priority.errors %}<div class="err">{{ form.priority.errors|striptags }}</div>{% endif %}
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label class="label">Due Date</label>
+          <input class="input" type="date" name="due_date" required />
+          {% if form.due_date.errors %}<div class="err">{{ form.due_date.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label">Due Time</label>
+          <input class="input" type="time" name="due_time" required />
+          {% if form.due_time.errors %}<div class="err">{{ form.due_time.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn" id="cancelTaskModal">Cancel</button>
+        <button type="submit" class="btn blue">Add Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const openBtn = document.getElementById("openTaskModal");
+  const modal = document.getElementById("taskModal");
+  const backdrop = document.getElementById("taskBackdrop");
+  const closeBtn = document.getElementById("closeTaskModal");
+  const cancelBtn = document.getElementById("cancelTaskModal");
+
+  function openModal(){
+    backdrop.classList.add("open");
+    modal.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+  function closeModal(){
+    backdrop.classList.remove("open");
+    modal.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  if(openBtn) openBtn.addEventListener("click", openModal);
+  if(closeBtn) closeBtn.addEventListener("click", closeModal);
+  if(cancelBtn) cancelBtn.addEventListener("click", closeModal);
+  if(backdrop) backdrop.addEventListener("click", closeModal);
+  document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeModal(); });
+
+  {% if form.errors %}
+    openModal();
+  {% endif %}
+})();
+</script>
+
+<script>
+(function(){
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function updateBars(){
+    const now = new Date();
+
+    document.querySelectorAll("[data-created][data-due]").forEach(el=>{
+      const bar = el.querySelector(".bar");
+      const overdue = el.querySelector(".overdue");
+
+      const created = new Date(el.dataset.created);
+      const due = new Date(el.dataset.due);
+
+      if(isNaN(created.getTime()) || isNaN(due.getTime()) || !bar) return;
+
+      const total = due - created;
+      const elapsed = now - created;
+
+      let pct = 0;
+      if(total > 0) pct = clamp((elapsed / total) * 100, 0, 100);
+      else pct = now > due ? 100 : 0;
+
+      bar.style.width = pct + "%";
+
+      if(now > due){
+        if(overdue) overdue.style.display = "flex";
+        bar.style.background = "#dc2626";
+      } else {
+        if(overdue) overdue.style.display = "none";
+        bar.style.background = "#111827";
+      }
+    });
+  }
+
+  updateBars();
+  setInterval(updateBars, 1000);
+})();
+</script>
+
+{% endblock %}

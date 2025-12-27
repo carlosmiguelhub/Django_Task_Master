@@ -1,0 +1,46 @@
+<div class="task"
+     data-created="{{ t.created_at|date:'c' }}"
+     data-due="{% if t.due_date and t.due_time %}{{ t.due_date|date:'Y-m-d' }}T{{ t.due_time|time:'H:i' }}:00{% endif %}">
+
+  <div class="task-top">
+    <div>
+      <h4 class="task-title">{{ t.title }}</h4>
+
+      {% if t.priority %}
+        <span class="tag {% if t.priority == 'high' %}high{% elif t.priority == 'low' %}low{% else %}normal{% endif %}">
+          {{ t.get_priority_display }}
+        </span>
+      {% else %}
+        <span class="tag normal">Normal</span>
+      {% endif %}
+    </div>
+
+    <div class="task-date">
+      {% if t.due_date %}{{ t.due_date }}{% endif %}
+      {% if t.due_time %}, {{ t.due_time }}{% endif %}
+    </div>
+  </div>
+
+  <div class="overdue">
+    ⚠ Overdue
+  </div>
+
+  <div class="bar-wrap">
+    <div class="bar"></div>
+  </div>
+
+  <div class="task-actions">
+  {% if t.status == "pending" %}
+    <form method="post" action="{% url 'boards:task_start' t.id %}">
+      {% csrf_token %}
+      <button type="submit" class="task-btn start">Start</button>
+    </form>
+  {% elif t.status == "in_progress" %}
+    <form method="post" action="{% url 'boards:task_complete' t.id %}">
+      {% csrf_token %}
+      <button type="submit" class="task-btn complete">✓ Complete</button>
+    </form>
+  {% endif %}
+</div>
+
+</div>

@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% block title %}Boards • Task Master{% endblock %}
+
+{% block body %}
+
+<style>
+  /* ====== Layout that works even without Tailwind ====== */
+  .boards-wrap { max-width: 1536px; margin: 0 auto; padding: 32px 16px; }
+  @media (min-width: 640px) { .boards-wrap { padding: 32px 24px; } }
+
+  .boards-title { font-size: 44px; font-weight: 700; margin: 0; color: #0f172a; }
+  .boards-sub { margin-top: 8px; font-size: 14px; color: #64748b; }
+
+  .boards-scroll { margin-top: 18px; max-height: 72vh; overflow: auto; padding-right: 8px; }
+
+  .boards-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .boards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .boards-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .board-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    padding: 14px; box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+    cursor: pointer; transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .board-card:hover { border-color: #cbd5e1; box-shadow: 0 6px 16px rgba(15, 23, 42, .08); transform: translateY(-1px); }
+
+  .board-top { display:flex; align-items:flex-start; justify-content:space-between; gap: 10px; }
+  .board-name { font-size: 15px; font-weight: 700; color: #4f46e5; margin:0; line-height: 1.2; }
+  .board-desc { margin-top: 6px; font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .board-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 12px;
+    border: 1px solid #e2e8f0; background:#fff; color:#334155;
+    display:inline-flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .icon-btn:hover { background:#f8fafc; }
+  .icon-btn.danger { color:#e11d48; }
+  .icon-btn.danger:hover { background:#fff1f2; }
+
+  .view-link { font-size: 13px; font-weight: 700; color:#4f46e5; text-decoration:none; }
+  .view-link:hover { text-decoration: underline; }
+
+  .board-meta { margin-top: 12px; display:flex; align-items:center; gap:10px; font-size: 13px; color:#334155; }
+  .meta-icon {
+    width: 34px; height: 34px; border-radius: 12px;
+    border: 1px solid #e2e8f0; background:#f8fafc; color:#64748b;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .create-tile {
+    border: 2px dashed #a5b4fc; border-radius: 16px; background:#fff;
+    padding: 16px; text-align:center; color:#4f46e5; font-weight: 800;
+    cursor:pointer; transition: background .12s ease, border-color .12s ease;
+    min-height: 86px; display:flex; align-items:center; justify-content:center;
+  }
+  .create-tile:hover { border-color:#818cf8; background:#eef2ff; }
+
+  /* ====== Modal system (pure CSS) ====== */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(6px);
+    display: none;
+  }
+  .modal {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    padding: 18px;
+    overflow: auto;
+  }
+  .modal.open, .modal-backdrop.open { display: flex; }
+
+  .modal-card {
+    width: 100%; max-width: 560px;
+    background:#fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, .18);
+    margin: 24px auto;
+  }
+  .modal-card.sm { max-width: 460px; }
+
+  .modal-head { display:flex; align-items:center; justify-content:space-between; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; }
+  .modal-title { font-size: 16px; font-weight: 800; margin:0; color:#0f172a; }
+  .modal-x {
+    width: 38px; height: 38px; border-radius: 12px; border:1px solid #e2e8f0;
+    background:#fff; cursor:pointer;
+  }
+  .modal-x:hover { background:#f8fafc; }
+
+  .modal-body { padding: 16px 18px; }
+
+  .field { margin-bottom: 12px; }
+  .label { display:block; font-size: 13px; font-weight: 700; color:#334155; margin-bottom: 6px; }
+  .input, .textarea {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+  }
+  .textarea { min-height: 96px; resize: vertical; }
+  .input:focus, .textarea:focus { border-color:#0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.10); }
+
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; padding-top: 8px; }
+  .btn {
+    border-radius: 12px; padding: 10px 14px; font-weight: 800;
+    border:1px solid #e2e8f0; background:#fff; cursor:pointer;
+  }
+  .btn:hover { background:#f8fafc; }
+  .btn.primary { background:#0f172a; border-color:#0f172a; color:#fff; }
+  .btn.primary:hover { opacity:.95; }
+  .btn.danger { background:#e11d48; border-color:#e11d48; color:#fff; }
+  .btn.danger:hover { opacity:.95; }
+
+  .error { color:#dc2626; font-size: 13px; margin-top: 6px; }
+</style>
+
+<div class="boards-wrap">
+  <h1 class="boards-title">Your Boards</h1>
+  <p class="boards-sub">Organize your tasks by board. Click a board to open it.</p>
+
+  <div class="boards-scroll">
+    <div class="boards-grid">
+      {% for b in boards %}
+        <div class="board-card boardCard" data-href="{% url 'boards:detail' b.id %}">
+          <div class="board-top">
+            <div style="min-width:0;">
+              <h3 class="board-name">{{ b.name }}</h3>
+              <div class="board-desc">{{ b.description|default:"Board overview" }}</div>
+            </div>
+
+            <div class="board-actions">
+              <button
+                type="button"
+                class="icon-btn boardEditBtn"
+                title="Edit"
+                data-name="{{ b.name|escapejs }}"
+                data-description="{{ b.description|default:''|escapejs }}"
+                data-update-url="{% url 'boards:update' b.id %}">
+                <!-- pencil -->
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                class="icon-btn danger boardDeleteBtn"
+                title="Delete"
+                data-name="{{ b.name|escapejs }}"
+                data-delete-url="{% url 'boards:delete' b.id %}">
+                <!-- trash -->
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M8 6V4h8v2"></path>
+                  <path d="M19 6l-1 14H6L5 6"></path>
+                  <path d="M10 11v6"></path>
+                  <path d="M14 11v6"></path>
+                </svg>
+              </button>
+
+              <a class="view-link" href="{% url 'boards:detail' b.id %}" onclick="event.stopPropagation()">View →</a>
+            </div>
+          </div>
+
+          <div class="board-meta">
+            <div class="meta-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 6h13"></path>
+                <path d="M8 12h13"></path>
+                <path d="M8 18h13"></path>
+                <path d="M3 6h.01"></path>
+                <path d="M3 12h.01"></path>
+                <path d="M3 18h.01"></path>
+              </svg>
+            </div>
+            <div><strong>{{ b.task_count }}</strong> Task{{ b.task_count|pluralize }}</div>
+          </div>
+        </div>
+      {% endfor %}
+
+      <button type="button" id="openCreateModalRow" class="create-tile">
+        + Create New Board
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop -->
+<div id="modalBackdrop" class="modal-backdrop"></div>
+
+<!-- CREATE -->
+<div id="createModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 class="modal-title">Create Board</h2>
+      <button type="button" class="modal-x closeModal">✕</button>
+    </div>
+
+    <form method="post" class="modal-body">
+      {% csrf_token %}
+
+      <div class="field">
+        <label class="label">Board name</label>
+        <input class="input" name="name" value="{{ form.name.value|default_if_none:'' }}" required />
+        {% if form.name.errors %}<div class="error">{{ form.name.errors|striptags }}</div>{% endif %}
+      </div>
+
+      <div class="field">
+        <label class="label">Description (optional)</label>
+        <textarea class="textarea" name="description" rows="3">{{ form.description.value|default_if_none:'' }}</textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn closeModal">Cancel</button>
+        <button type="submit" class="btn primary">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT -->
+<div id="editModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 class="modal-title">Edit Board</h2>
+      <button type="button" class="modal-x closeModal">✕</button>
+    </div>
+
+    <form id="editForm" method="post" class="modal-body">
+      {% csrf_token %}
+
+      <div class="field">
+        <label class="label">Board name</label>
+        <input id="editName" class="input" name="name" required />
+      </div>
+
+      <div class="field">
+        <label class="label">Description (optional)</label>
+        <textarea id="editDescription" class="textarea" name="description" rows="3"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn closeModal">Cancel</button>
+        <button type="submit" class="btn primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DELETE -->
+<div id="deleteModal" class="modal" aria-hidden="true">
+  <div class="modal-card sm">
+    <div class="modal-head">
+      <h2 class="modal-title">Delete Board</h2>
+      <button type="button" class="modal-x closeModal">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <p style="margin:0; color:#334155; font-size:14px;">
+        Are you sure you want to delete <strong id="deleteBoardName"></strong>?
+      </p>
+      <p style="margin:10px 0 0; color:#64748b; font-size:12px;">This action cannot be undone.</p>
+
+      <form id="deleteForm" method="post" style="margin-top:14px;">
+        {% csrf_token %}
+        <div class="modal-actions">
+          <button type="button" class="btn closeModal">Cancel</button>
+          <button type="submit" class="btn danger">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const backdrop = document.getElementById("modalBackdrop");
+  const createModal = document.getElementById("createModal");
+  const editModal = document.getElementById("editModal");
+  const deleteModal = document.getElementById("deleteModal");
+
+  const openCreateBtnRow = document.getElementById("openCreateModalRow");
+
+  const editForm = document.getElementById("editForm");
+  const editName = document.getElementById("editName");
+  const editDescription = document.getElementById("editDescription");
+
+  const deleteForm = document.getElementById("deleteForm");
+  const deleteBoardName = document.getElementById("deleteBoardName");
+
+  function openModal(modalEl) {
+    backdrop.classList.add("open");
+    modalEl.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeAll() {
+    backdrop.classList.remove("open");
+    [createModal, editModal, deleteModal].forEach(m => m.classList.remove("open"));
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".closeModal").forEach(btn => btn.addEventListener("click", closeAll));
+  backdrop.addEventListener("click", closeAll);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
+
+  if (openCreateBtnRow) {
+    openCreateBtnRow.addEventListener("click", (e) => {
+      e.preventDefault();
+      openModal(createModal);
+    });
+  }
+
+  document.querySelectorAll(".boardCard").forEach(card => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("button, a, input, textarea, label")) return;
+      const href = card.dataset.href;
+      if (href) window.location.href = href;
+    });
+  });
+
+  document.querySelectorAll(".boardEditBtn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      editName.value = btn.dataset.name || "";
+      editDescription.value = btn.dataset.description || "";
+
+      const updateUrl = btn.dataset.updateUrl || "";
+      if (updateUrl) editForm.action = updateUrl;
+
+      openModal(editModal);
+      setTimeout(() => editName.focus(), 50);
+    });
+  });
+
+  document.querySelectorAll(".boardDeleteBtn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      deleteBoardName.textContent = btn.dataset.name || "this board";
+      const deleteUrl = btn.dataset.deleteUrl || "";
+      if (deleteUrl) deleteForm.action = deleteUrl;
+
+      openModal(deleteModal);
+    });
+  });
+
+  {% if form.errors %}
+    openModal(createModal);
+  {% endif %}
+})();
+</script>
+
+{% endblock %}

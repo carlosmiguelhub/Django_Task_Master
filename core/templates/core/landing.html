@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Task Master{% endblock %}
+
+{% block navbar %}
+<!-- Public Landing Navbar -->
+<header class="sticky top-0 z-50 py-2  border-b border-slate-300 bg-white/70 backdrop-blur">
+  <div class="mx-auto max-w-7xl px-5 sm:px-6">
+    <div class="flex h items-center justify-between">
+
+      <a href="/" class="flex items-center gap-3">
+        <span class="text-sm font-semibold tracking-tight text-slate-900">Task Master</span>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <a class="text-sm font-medium text-slate-600 hover:text-slate-900"
+           href="{% url 'accounts:login' %}">
+          Login
+        </a>
+
+        <a class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+           href="{% url 'accounts:register' %}">
+          Get Started
+        </a>
+      </div>
+
+    </div>
+  </div>
+</header>
+{% endblock navbar %}
+
+{% block body %}
+<div class="relative min-h-screen overflow-hidden">
+
+  <!-- Soft background aura -->
+  <div class="pointer-events-none absolute inset-0">
+    <div class="absolute -top-32 left-1/2 h-72 w-[44rem] -translate-x-1/2 rounded-full bg-indigo-200/40 blur-3xl"></div>
+    <div class="absolute top-40 -left-24 h-72 w-72 rounded-full bg-sky-200/30 blur-3xl"></div>
+    <div class="absolute top-72 -right-24 h-72 w-72 rounded-full bg-emerald-200/25 blur-3xl"></div>
+  </div>
+
+  <main class="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20">
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+      <!-- Left -->
+      <section>
+        <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600">
+          <span class="inline-block h-2 w-2 rounded-full bg-emerald-500"></span>
+          Boards • Tasks • Planner
+        </div>
+
+        <h1 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-slate-900">
+          Stay organized with boards, tasks, and a planner —
+          <span class="text-indigo-600">all in one place.</span>
+        </h1>
+
+        <p class="mt-5 text-lg text-slate-600 max-w-xl leading-relaxed">
+          Create boards for your projects, track task status from Pending to Completed,
+          and plan schedules with a calendar-style planner — simple, fast, and clean.
+        </p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="{% url 'accounts:register' %}"
+             class="rounded-xl bg-slate-900 text-white px-6 py-3 text-sm font-semibold shadow-sm hover:opacity-95">
+            Get Started
+          </a>
+          <a href="{% url 'accounts:login' %}"
+             class="rounded-xl border border-slate-300 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-900 hover:bg-white">
+            Login
+          </a>
+        </div>
+
+
+      </section>
+
+      <!-- Right: Preview -->
+      <section class="lg:justify-self-end w-full">
+        <div class="rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-sm">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-semibold text-slate-500 uppercase">Total Tasks</div>
+              <div class="mt-2 text-3xl font-extrabold text-slate-900">24</div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-semibold text-slate-500 uppercase">Completed</div>
+              <div class="mt-2 text-3xl font-extrabold text-slate-900">10</div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-semibold text-slate-500 uppercase">In Progress</div>
+              <div class="mt-2 text-3xl font-extrabold text-slate-900">8</div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-semibold text-slate-500 uppercase">Pending</div>
+              <div class="mt-2 text-3xl font-extrabold text-slate-900">6</div>
+            </div>
+          </div>
+
+          <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-semibold text-slate-900">Planner preview</div>
+                <p class="mt-1 text-sm text-slate-600">
+                  Add events with start/end time like Google Calendar.
+                </p>
+              </div>
+              <span class="rounded-xl bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                Upcoming
+              </span>
+            </div>
+
+            <div class="mt-4 grid gap-2">
+              <div class="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
+                <span class="font-medium text-slate-800">Team meeting</span>
+                <span class="text-slate-500">Mon 9:00 AM</span>
+              </div>
+              <div class="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
+                <span class="font-medium text-slate-800">Submit project</span>
+                <span class="text-slate-500">Fri 6:00 PM</span>
+              </div>
+            </div>
+          </div>
+
+
+
+    <footer class="mt-16 border-t border-slate-200/70 pt-8 text-sm text-slate-500">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+
+          <div></div>
+           <div></div>
+        <span>© {% now "Y" %} Task Master</span>
+
+      </div>
+    </footer>
+
+  </main>
+</div>
+{% endblock %}
