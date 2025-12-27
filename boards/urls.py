@@ -17,4 +17,6 @@ urlpatterns = [
     # ✅ NEW: Archive
     path("archive/", views.archive_list, name="archive_list"),
     path("task/<int:task_id>/archive/", views.task_archive, name="task_archive"),
+    path("archive/<int:task_id>/delete/", views.task_delete, name="task_delete"),
+
 ]

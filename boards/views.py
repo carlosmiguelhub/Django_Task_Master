@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -7,6 +7,9 @@ import datetime
 
 from .forms import BoardCreateForm, TaskCreateForm
 from .models import Board, Task
+from django.contrib import messages
+
+
 
 
 
@@ -25,7 +28,9 @@ def board_list(request):
 
     boards = (
         Board.objects.filter(owner=request.user)
-        .annotate(task_count=Count("tasks"))
+        .annotate(
+            task_count=Count("tasks", filter=Q(tasks__is_archived=False))
+        )
         .order_by("-created_at")
     )
 
@@ -151,3 +156,11 @@ def archive_list(request):
         .order_by("-completed_at", "-created_at")
     )
     return render(request, "boards/archive_list.html", {"tasks": tasks})
+
+@require_POST
+@login_required
+def task_delete(request, task_id):
+    task = get_object_or_404(Task, id=task_id, board__owner=request.user, is_archived=True)
+    task.delete()
+    messages.success(request, "Task deleted permanently.")
+    return redirect("boards:archive_list")

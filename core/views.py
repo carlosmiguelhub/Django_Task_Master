@@ -11,7 +11,7 @@ def landing(request):
 
 @login_required
 def dashboard(request):
-    qs = Task.objects.filter(board__owner=request.user)
+    qs = Task.objects.filter(board__owner=request.user, is_archived=False)
 
     counts = qs.aggregate(
         total=Count("id"),
