@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Task Master{% endblock %}
+
+{% block body %}
+<section class="tm-content-page">
+  <header class="tm-content-header">
+    <div>
+      <h1>Notifications</h1>
+      <p>Deadline reminders and important updates from your workspace.</p>
+    </div>
+    {% if notification_unread_count %}
+      <form method="post" action="{% url 'notifications:read_all' %}">
+        {% csrf_token %}
+        <button type="submit" class="tm-button tm-button-secondary">Mark all as read</button>
+      </form>
+    {% endif %}
+  </header>
+
+  <div class="tm-notification-list">
+    {% for notification in notifications %}
+      <article class="tm-notification-row {% if notification.is_read %}is-read{% endif %}">
+        <span class="tm-notification-dot {% if notification.kind == 'overdue' %}danger{% endif %}"></span>
+        <div class="tm-notification-copy">
+          <strong>{{ notification.title }}</strong>
+          <p>{{ notification.message }}</p>
+          <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|timesince }} ago</time>
+        </div>
+        <form method="post" action="{% url 'notifications:read' notification.id %}">
+          {% csrf_token %}
+          <button type="submit" class="tm-button tm-button-secondary">
+            {% if notification.is_read %}Open task{% else %}View task{% endif %}
+          </button>
+        </form>
+      </article>
+    {% empty %}
+      <div class="tm-empty-card">
+        <strong>You are all caught up</strong>
+        Due-soon and overdue task reminders will appear here.
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

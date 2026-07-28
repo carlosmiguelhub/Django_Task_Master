@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'boards',
     'tasks',
     'planner',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -66,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'notifications.context_processors.notification_summary',
             ],
         },
     },
@@ -82,9 +84,9 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "task_master",
         "USER": "root",
-        "PASSWORD": "",
+        "PASSWORD": "root",
         "HOST": "127.0.0.1",
-        "PORT": "3306",
+        "PORT": "3307",
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
         },
@@ -110,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Manila'
 
 USE_I18N = True
 

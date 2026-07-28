@@ -33,5 +33,7 @@ urlpatterns = [
     path("app/", include("core.app_urls")),  # dashboard + sidebar pages later
 
     path("boards/", include("boards.urls")),
+    path("notifications/", include("notifications.urls")),
+    path("planner/", include("planner.urls")),
 
 ]

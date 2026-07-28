@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Task Master — Work with clarity{% endblock %}
+
+{% block body %}
+<div class="tm-landing">
+  <div class="tm-landing-glow" aria-hidden="true"></div>
+
+  <section class="tm-hero">
+    <div class="tm-container">
+      <div class="tm-eyebrow">
+        <span class="tm-eyebrow-dot"></span>
+        A calmer way to move work forward
+      </div>
+      <h1>Turn busy work into <span class="tm-gradient-text">clear progress.</span></h1>
+      <p class="tm-hero-copy">
+        Organize projects into focused boards, keep every deadline visible,
+        and move tasks from idea to done without the clutter.
+      </p>
+      <div class="tm-hero-actions">
+        <a href="{% url 'accounts:register' %}" class="tm-button tm-button-primary">
+          Start organizing
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+        </a>
+        <a href="{% url 'accounts:login' %}" class="tm-button tm-button-secondary">Sign in to your workspace</a>
+      </div>
+      <p class="tm-hero-note">Simple setup · Private workspaces · No learning curve</p>
+
+      <div class="tm-product-frame" aria-label="Task Master dashboard preview">
+        <div class="tm-product-window">
+          <div class="tm-product-bar">
+            <span class="tm-window-dot"></span><span class="tm-window-dot"></span><span class="tm-window-dot"></span>
+          </div>
+          <div class="tm-preview">
+            <aside class="tm-preview-sidebar">
+              <div class="tm-preview-brandline"></div>
+              <div class="tm-preview-navitem active"><span class="tm-preview-navicon"></span>Dashboard</div>
+              <div class="tm-preview-navitem"><span class="tm-preview-navicon"></span>Boards</div>
+              <div class="tm-preview-navitem"><span class="tm-preview-navicon"></span>Archive</div>
+            </aside>
+            <div class="tm-preview-main">
+              <div class="tm-preview-heading">Good morning, Carlos</div>
+              <div class="tm-preview-subheading">Here is what is moving across your workspace.</div>
+              <div class="tm-preview-stats">
+                <div class="tm-preview-stat"><div class="tm-preview-stat-label">Total</div><div class="tm-preview-stat-value">24</div></div>
+                <div class="tm-preview-stat"><div class="tm-preview-stat-label">Pending</div><div class="tm-preview-stat-value">8</div></div>
+                <div class="tm-preview-stat"><div class="tm-preview-stat-label">Active</div><div class="tm-preview-stat-value">6</div></div>
+                <div class="tm-preview-stat"><div class="tm-preview-stat-label">Done</div><div class="tm-preview-stat-value">10</div></div>
+              </div>
+              <div class="tm-preview-board">
+                <div class="tm-preview-column">
+                  <div class="tm-preview-column-title">Pending <span class="tm-preview-count">3</span></div>
+                  <div class="tm-preview-card"><div class="tm-preview-card-line"></div><div class="tm-preview-card-line short"></div></div>
+                  <div class="tm-preview-card"><div class="tm-preview-card-line"></div><div class="tm-preview-card-line short"></div></div>
+                </div>
+                <div class="tm-preview-column">
+                  <div class="tm-preview-column-title">In progress <span class="tm-preview-count">2</span></div>
+                  <div class="tm-preview-card"><div class="tm-preview-card-line"></div><div class="tm-preview-card-line short"></div></div>
+                </div>
+                <div class="tm-preview-column">
+                  <div class="tm-preview-column-title">Completed <span class="tm-preview-count">4</span></div>
+                  <div class="tm-preview-card"><div class="tm-preview-card-line"></div><div class="tm-preview-card-line short"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tm-features">
+    <div class="tm-container">
+      <div class="tm-section-heading">
+        <div class="tm-section-kicker">Built for momentum</div>
+        <h2>Everything you need to stay on top of the work.</h2>
+        <p>A focused set of tools that keeps planning lightweight and progress visible.</p>
+      </div>
+      <div class="tm-feature-grid">
+        <article class="tm-feature-card">
+          <div class="tm-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M9 3v18M9 9h12"></path></svg></div>
+          <h3>Focused project boards</h3>
+          <p>Separate work into clean project spaces so every task has context and a clear home.</p>
+        </article>
+        <article class="tm-feature-card">
+          <div class="tm-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></div>
+          <h3>A workflow you can trust</h3>
+          <p>Move tasks from pending to active to done, with completion timing recorded automatically.</p>
+        </article>
+        <article class="tm-feature-card">
+          <div class="tm-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+          <h3>Deadlines that stay visible</h3>
+          <p>Set dates, times, and priorities so urgent work stands out before it becomes overdue.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="tm-container tm-cta">
+    <div class="tm-cta-content">
+      <h2>Give every task a clear next step.</h2>
+      <p>Create your workspace and replace scattered notes with a system that makes progress easy to see.</p>
+      <a href="{% url 'accounts:register' %}" class="tm-button tm-button-primary">Create your account</a>
+    </div>
+  </section>
+
+  <footer class="tm-footer">
+    <div class="tm-container tm-footer-inner">
+      <span>© {% now "Y" %} Task Master</span>
+      <span>Designed for focused, everyday progress.</span>
+    </div>
+  </footer>
+</div>
+{% endblock %}

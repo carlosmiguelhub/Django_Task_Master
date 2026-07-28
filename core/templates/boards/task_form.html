@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Edit task — Task Master{% endblock %}
+
+{% block body %}
+<section class="tm-content-page">
+  <header class="tm-content-header">
+    <div>
+      <a href="{% url 'boards:detail' board.id %}" class="tm-form-link">&larr; Back to {{ board.name }}</a>
+      <h1 style="margin-top:14px;">Edit task</h1>
+      <p>Update the task details, priority, or deadline.</p>
+    </div>
+  </header>
+
+  <form method="post" class="tm-form-card" novalidate>
+    {% csrf_token %}
+    <div class="tm-form-grid">
+      <div class="tm-field tm-field-full">
+        <label for="id_title">Task title</label>
+        <input id="id_title" class="tm-input" type="text" name="title" value="{{ form.title.value|default_if_none:'' }}" required autofocus>
+        {% if form.title.errors %}<p class="tm-field-error">{{ form.title.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="tm-field tm-field-full">
+        <label for="id_description">Description</label>
+        <textarea id="id_description" class="tm-input" name="description" rows="5" style="resize:vertical;">{{ form.description.value|default_if_none:'' }}</textarea>
+        {% if form.description.errors %}<p class="tm-field-error">{{ form.description.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="tm-field">
+        <label for="id_priority">Priority</label>
+        <select id="id_priority" class="tm-input" name="priority" required>
+          {% for value, label in form.fields.priority.choices %}
+            <option value="{{ value }}" {% if form.priority.value == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if form.priority.errors %}<p class="tm-field-error">{{ form.priority.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div></div>
+
+      <div class="tm-field">
+        <label for="id_due_date">Due date</label>
+        <input id="id_due_date" class="tm-input" type="date" name="due_date" value="{{ form.due_date.value|date:'Y-m-d'|default:form.due_date.value }}" required>
+        {% if form.due_date.errors %}<p class="tm-field-error">{{ form.due_date.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="tm-field">
+        <label for="id_due_time">Due time</label>
+        <input id="id_due_time" class="tm-input" type="time" name="due_time" value="{{ form.due_time.value|time:'H:i'|default:form.due_time.value }}" required>
+        {% if form.due_time.errors %}<p class="tm-field-error">{{ form.due_time.errors|striptags }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="tm-form-actions">
+      <button type="submit" form="delete-task-form" class="tm-button tm-button-secondary tm-danger-button" onclick="return confirm('Delete this task permanently?')">Delete task</button>
+      <div class="tm-form-actions-group">
+        <a href="{% url 'boards:detail' board.id %}" class="tm-button tm-button-secondary">Cancel</a>
+        <button type="submit" class="tm-button tm-button-primary">Save changes</button>
+      </div>
+    </div>
+  </form>
+
+  <form id="delete-task-form" method="post" action="{% url 'boards:task_delete_active' task.id %}" hidden>
+    {% csrf_token %}
+  </form>
+</section>
+{% endblock %}

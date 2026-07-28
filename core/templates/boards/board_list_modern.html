@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Boards — Task Master{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/boards.css' %}">
+{% endblock %}
+
+{% block body %}
+<section class="board-page">
+  <div class="board-shell">
+    <header class="board-hero">
+      <div>
+        <span class="board-eyebrow">Workspace</span>
+        <h1>Your boards</h1>
+        <p>Keep every project focused, visible, and moving toward completion.</p>
+      </div>
+      <div class="board-hero-actions">
+        <a href="{% url 'boards:archive_list' %}" class="tm-button tm-button-secondary">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M5 7l1 13h12l1-13M9 11h6M4 4h16v3H4z"/></svg>
+          Archive
+        </a>
+        <button type="button" class="tm-button tm-button-primary" data-dialog-open="create-board-dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          New board
+        </button>
+      </div>
+    </header>
+
+    <div class="board-stats" aria-label="Board summary">
+      <article class="board-stat">
+        <span class="board-stat-icon board-stat-icon-purple">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>
+        </span>
+        <div><strong>{{ board_count }}</strong><span>Total board{{ board_count|pluralize }}</span></div>
+      </article>
+      <article class="board-stat">
+        <span class="board-stat-icon board-stat-icon-amber">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+        <div><strong>{{ active_task_count }}</strong><span>Active task{{ active_task_count|pluralize }}</span></div>
+      </article>
+      <article class="board-stat">
+        <span class="board-stat-icon board-stat-icon-green">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+        </span>
+        <div><strong>{{ completed_task_count }}</strong><span>Completed</span></div>
+      </article>
+    </div>
+
+    {% if boards %}
+      <div class="board-section-heading">
+        <div>
+          <h2>All projects</h2>
+          <p>Select a board to manage its workflow.</p>
+        </div>
+      </div>
+
+      <div class="board-card-grid">
+        {% for board in boards %}
+          <article class="board-card">
+            <div class="board-card-top">
+              <span class="board-card-mark" aria-hidden="true">{{ board.name|slice:":1"|upper }}</span>
+              <div class="board-card-actions">
+                <button
+                  type="button"
+                  class="board-icon-button"
+                  aria-label="Edit {{ board.name }}"
+                  data-edit-board
+                  data-board-id="{{ board.id }}"
+                  data-board-name="{{ board.name }}"
+                  data-board-description="{{ board.description }}"
+                  data-board-action="{% url 'boards:update' board.id %}"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-.8 4.8L8 20l11-11-4-4L4 16zM13.5 6.5l4 4"/></svg>
+                </button>
+                <button
+                  type="button"
+                  class="board-icon-button board-icon-danger"
+                  aria-label="Delete {{ board.name }}"
+                  data-delete-board
+                  data-board-id="{{ board.id }}"
+                  data-board-name="{{ board.name }}"
+                  data-board-action="{% url 'boards:delete' board.id %}"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <a href="{% url 'boards:detail' board.id %}" class="board-card-link">
+              <h3>{{ board.name }}</h3>
+              <p>{{ board.description|default:"A focused space for your tasks and milestones."|truncatechars:118 }}</p>
+            </a>
+
+            <div class="board-progress-copy">
+              <span>Progress</span>
+              <strong>{{ board.progress_percent }}%</strong>
+            </div>
+            <div class="board-progress" aria-label="{{ board.progress_percent }} percent complete">
+              <span style="width: {{ board.progress_percent }}%"></span>
+            </div>
+
+            <footer class="board-card-footer">
+              <span>{{ board.task_count }} task{{ board.task_count|pluralize }}</span>
+              <span>{{ board.completed_count }} complete</span>
+              <a href="{% url 'boards:detail' board.id %}" aria-label="Open {{ board.name }}">
+                Open board
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </a>
+            </footer>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="board-empty">
+        <span class="board-empty-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>
+        </span>
+        <h2>Create your first board</h2>
+        <p>Give your work a home, then break it into clear, actionable tasks.</p>
+        <button type="button" class="tm-button tm-button-primary" data-dialog-open="create-board-dialog">Create a board</button>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<dialog class="board-dialog" id="create-board-dialog" {% if form.errors %}data-open-on-load{% endif %}>
+  <form method="post" class="board-dialog-card">
+    {% csrf_token %}
+    <header>
+      <span class="board-dialog-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </span>
+      <div><h2>Create a new board</h2><p>Set up a focused workspace for your project.</p></div>
+      <button type="button" class="board-dialog-close" data-dialog-close aria-label="Close">&times;</button>
+    </header>
+    <div class="board-dialog-body">
+      <label for="id_name">Board name</label>
+      <input class="board-input" id="id_name" name="name" maxlength="120" value="{{ form.name.value|default:'' }}" placeholder="e.g. Product launch" required autofocus>
+      {% if form.name.errors %}<p class="board-field-error">{{ form.name.errors|striptags }}</p>{% endif %}
+      <label for="id_description">Description <span>Optional</span></label>
+      <textarea class="board-input" id="id_description" name="description" rows="4" placeholder="What is this board for?">{{ form.description.value|default:'' }}</textarea>
+      {% if form.description.errors %}<p class="board-field-error">{{ form.description.errors|striptags }}</p>{% endif %}
+    </div>
+    <footer>
+      <button type="button" class="tm-button tm-button-secondary" data-dialog-close>Cancel</button>
+      <button type="submit" class="tm-button tm-button-primary">Create board</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="board-dialog" id="edit-board-dialog">
+  <form method="post" class="board-dialog-card" id="edit-board-form">
+    {% csrf_token %}
+    <header>
+      <span class="board-dialog-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-.8 4.8L8 20l11-11-4-4L4 16z"/></svg></span>
+      <div><h2>Edit board</h2><p>Keep the name and purpose clear for your workspace.</p></div>
+      <button type="button" class="board-dialog-close" data-dialog-close aria-label="Close">&times;</button>
+    </header>
+    <div class="board-dialog-body">
+      <label for="edit-board-name">Board name</label>
+      <input class="board-input" id="edit-board-name" name="name" maxlength="120" required>
+      <label for="edit-board-description">Description <span>Optional</span></label>
+      <textarea class="board-input" id="edit-board-description" name="description" rows="4"></textarea>
+    </div>
+    <footer>
+      <button type="button" class="tm-button tm-button-secondary" data-dialog-close>Cancel</button>
+      <button type="submit" class="tm-button tm-button-primary">Save changes</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="board-dialog" id="delete-board-dialog">
+  <form method="post" class="board-dialog-card board-dialog-danger" id="delete-board-form">
+    {% csrf_token %}
+    <header>
+      <span class="board-dialog-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><path d="M10.3 3.7 2.5 18a2 2 0 0 0 1.8 3h15.4a2 2 0 0 0 1.8-3L13.7 3.7a2 2 0 0 0-3.4 0z"/></svg></span>
+      <div><h2>Delete board?</h2><p>This permanently removes the board and every task inside it.</p></div>
+      <button type="button" class="board-dialog-close" data-dialog-close aria-label="Close">&times;</button>
+    </header>
+    <div class="board-dialog-body">
+      <p class="board-delete-warning">You are about to delete <strong id="delete-board-name"></strong>. This action cannot be undone.</p>
+    </div>
+    <footer>
+      <button type="button" class="tm-button tm-button-secondary" data-dialog-close>Keep board</button>
+      <button type="submit" class="tm-button board-button-danger">Delete permanently</button>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/board-list.js' %}"></script>
+{% endblock %}

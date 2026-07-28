@@ -6,7 +6,7 @@ from boards.models import Task  # ✅ USE THE BOARDS TASK MODEL
 
 
 def landing(request):
-    return render(request, "core/landing.html")
+    return render(request, "core/landing_modern.html")
 
 
 @login_required
@@ -23,4 +23,4 @@ def dashboard(request):
     context = {
         "counts": counts,  # ✅ use counts.total / counts.pending / counts.in_progress / counts.done
     }
-    return render(request, "core/dashboard.html", context)
+    return render(request, "core/dashboard_modern.html", context)

@@ -13,6 +13,8 @@ urlpatterns = [
     # Task status actions (Start -> In Progress, Complete -> Done)
     path("task/<int:task_id>/start/", views.task_start, name="task_start"),
     path("task/<int:task_id>/complete/", views.task_complete, name="task_complete"),
+    path("task/<int:task_id>/edit/", views.task_update, name="task_update"),
+    path("task/<int:task_id>/delete/", views.task_delete_active, name="task_delete_active"),
 
     # ✅ NEW: Archive
     path("archive/", views.archive_list, name="archive_list"),

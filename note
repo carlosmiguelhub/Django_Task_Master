@@ -1,0 +1,6 @@
+python -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+
+cd C:\Users\Carlos\CIT\Django_Task_Master
+.\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8001

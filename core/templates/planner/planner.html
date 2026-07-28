@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Planner — Task Master{% endblock %}
+
+{% block extra_head %}
+  <link href="{% static 'planner/planner.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+<section
+  class="planner-page"
+  id="plannerApp"
+  data-items-url="{% url 'planner:items' %}"
+  data-create-url="{% url 'planner:event_create' %}"
+  data-update-url-template="/planner/api/events/__id__/update/"
+  data-delete-url-template="/planner/api/events/__id__/delete/"
+  data-reschedule-url="{% url 'planner:reschedule' %}"
+>
+  <header class="planner-page-header">
+    <div>
+      <div class="planner-kicker">Workspace calendar</div>
+      <h1>Planner</h1>
+      <p>See deadlines and personal events in one focused schedule.</p>
+    </div>
+    <button type="button" class="tm-button tm-button-primary" id="newPlannerEvent">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      New event
+    </button>
+  </header>
+
+  <div class="planner-layout">
+    <aside class="planner-sidebar">
+      <div class="planner-sidebar-section">
+        <div class="planner-sidebar-title">View</div>
+        <div class="planner-view-switcher" role="group" aria-label="Calendar view">
+          <button type="button" data-view="month" class="is-active">Month</button>
+          <button type="button" data-view="week">Week</button>
+          <button type="button" data-view="agenda">Agenda</button>
+        </div>
+      </div>
+
+      <div class="planner-sidebar-section">
+        <div class="planner-sidebar-title">Show</div>
+        <label class="planner-check">
+          <input type="checkbox" data-source-filter="task" checked>
+          <span class="planner-legend-dot task"></span>
+          Task deadlines
+        </label>
+        <label class="planner-check">
+          <input type="checkbox" data-source-filter="event" checked>
+          <span class="planner-legend-dot event"></span>
+          Personal events
+        </label>
+      </div>
+
+      <div class="planner-sidebar-section">
+        <label class="planner-sidebar-title" for="plannerBoardFilter">Board</label>
+        <select id="plannerBoardFilter" class="planner-filter-select">
+          <option value="">All boards</option>
+          {% for board in boards %}
+            <option value="{{ board.id }}">{{ board.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="planner-sidebar-section">
+        <label class="planner-sidebar-title" for="plannerStatusFilter">Task status</label>
+        <select id="plannerStatusFilter" class="planner-filter-select">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="in_progress">In progress</option>
+          <option value="done">Completed</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+
+      <div class="planner-sidebar-section planner-summary">
+        <div class="planner-sidebar-title">Visible schedule</div>
+        <div class="planner-summary-row"><span>Tasks</span><strong id="visibleTaskCount">0</strong></div>
+        <div class="planner-summary-row"><span>Events</span><strong id="visibleEventCount">0</strong></div>
+        <div class="planner-summary-row danger"><span>Overdue</span><strong id="visibleOverdueCount">0</strong></div>
+      </div>
+    </aside>
+
+    <main class="planner-calendar-card">
+      <div class="planner-toolbar">
+        <div class="planner-navigation">
+          <button type="button" class="planner-icon-button" id="plannerPrevious" aria-label="Previous period">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+          </button>
+          <button type="button" class="planner-today-button" id="plannerToday">Today</button>
+          <button type="button" class="planner-icon-button" id="plannerNext" aria-label="Next period">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+          </button>
+        </div>
+        <h2 id="plannerPeriodLabel">Loading schedule…</h2>
+        <div class="planner-toolbar-note">Drag an item to reschedule</div>
+      </div>
+
+      <div id="plannerLoading" class="planner-loading" role="status">
+        <span></span> Loading your schedule
+      </div>
+      <div id="plannerCalendar" class="planner-calendar" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <div class="planner-toast" id="plannerToast" role="status" aria-live="polite" hidden></div>
+</section>
+
+<dialog class="planner-dialog" id="plannerEventDialog">
+  <form method="dialog" class="planner-dialog-card" id="plannerEventForm">
+    <div class="planner-dialog-head">
+      <div>
+        <div class="planner-kicker">Personal schedule</div>
+        <h2 id="plannerDialogTitle">New event</h2>
+      </div>
+      <button type="button" class="planner-icon-button" id="closePlannerDialog" aria-label="Close event form">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <div class="planner-dialog-body">
+      <input type="hidden" id="plannerEventId">
+      <div class="tm-field">
+        <label for="plannerEventTitle">Event title</label>
+        <input class="tm-input" id="plannerEventTitle" type="text" maxlength="200" placeholder="e.g. Project review" required>
+      </div>
+      <div class="tm-field">
+        <label for="plannerEventDescription">Description</label>
+        <textarea class="tm-input" id="plannerEventDescription" rows="3" placeholder="Add useful context" style="resize:vertical;"></textarea>
+      </div>
+      <label class="planner-all-day">
+        <input type="checkbox" id="plannerEventAllDay">
+        <span>All-day event</span>
+      </label>
+      <div class="planner-date-grid">
+        <div class="tm-field">
+          <label for="plannerStartDate">Start date</label>
+          <input class="tm-input" id="plannerStartDate" type="date" required>
+        </div>
+        <div class="tm-field planner-time-field">
+          <label for="plannerStartTime">Start time</label>
+          <input class="tm-input" id="plannerStartTime" type="time" required>
+        </div>
+        <div class="tm-field">
+          <label for="plannerEndDate">End date</label>
+          <input class="tm-input" id="plannerEndDate" type="date" required>
+        </div>
+        <div class="tm-field planner-time-field">
+          <label for="plannerEndTime">End time</label>
+          <input class="tm-input" id="plannerEndTime" type="time" required>
+        </div>
+      </div>
+      <div class="tm-form-error" id="plannerFormError" hidden></div>
+    </div>
+
+    <div class="planner-dialog-actions">
+      <button type="button" class="tm-button tm-button-secondary tm-danger-button" id="deletePlannerEvent" hidden>Delete</button>
+      <div>
+        <button type="button" class="tm-button tm-button-secondary" id="cancelPlannerEvent">Cancel</button>
+        <button type="submit" class="tm-button tm-button-primary" id="savePlannerEvent">Save event</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'planner/planner.js' %}"></script>
+{% endblock %}

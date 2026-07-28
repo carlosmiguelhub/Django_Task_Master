@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Sign in — Task Master{% endblock %}
+
+{% block body %}
+<div class="tm-auth-page">
+  <section class="tm-auth-story" aria-label="Task Master introduction">
+    <div class="tm-auth-story-content">
+      <div class="tm-auth-story-badge">Built for focused work</div>
+      <h1>Pick up exactly where you left off.</h1>
+      <p>Your boards, priorities, and deadlines are waiting in one clear workspace.</p>
+      <div class="tm-auth-proof">
+        <span>✓ Clear priorities</span>
+        <span>✓ Visible progress</span>
+        <span>✓ Fewer loose ends</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="tm-auth-form-pane">
+    <div class="tm-auth-card">
+      <div class="tm-auth-heading">
+        <h2>Welcome back</h2>
+        <p>Sign in to continue to your workspace.</p>
+      </div>
+
+      <form method="post" class="tm-auth-form" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="tm-form-error" role="alert">{{ form.non_field_errors|striptags }}</div>
+        {% endif %}
+
+        <div class="tm-field">
+          <label for="id_username">Username</label>
+          <div class="tm-input-wrap">
+            <svg class="tm-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input id="id_username" class="tm-input has-icon" type="text" name="{{ form.username.name }}" value="{{ form.username.value|default_if_none:'' }}" autocomplete="username" placeholder="Enter your username" required autofocus>
+          </div>
+          {% if form.username.errors %}<p class="tm-field-error">{{ form.username.errors|striptags }}</p>{% endif %}
+        </div>
+
+        <div class="tm-field">
+          <label for="id_password">Password</label>
+          <div class="tm-input-wrap">
+            <svg class="tm-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+            </svg>
+            <input id="id_password" class="tm-input has-icon has-action" type="password" name="{{ form.password.name }}" autocomplete="current-password" placeholder="Enter your password" required>
+            <button type="button" class="tm-input-action" data-password-toggle="id_password" aria-label="Show password" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+          {% if form.password.errors %}<p class="tm-field-error">{{ form.password.errors|striptags }}</p>{% endif %}
+        </div>
+
+        <div class="tm-form-row">
+          <label class="tm-check"><input type="checkbox" name="remember_me"> Keep me signed in</label>
+          <span class="tm-field-help">Use your Task Master credentials</span>
+        </div>
+
+        <button type="submit" class="tm-button tm-button-primary tm-auth-submit">Sign in</button>
+      </form>
+
+      <p class="tm-auth-switch">
+        New to Task Master? <a href="{% url 'accounts:register' %}">Create an account</a>
+      </p>
+    </div>
+  </section>
+</div>
+{% endblock %}

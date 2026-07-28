@@ -20,7 +20,7 @@ def register_view(request):
     else:
         form = RegisterForm()
 
-    return render(request, "accounts/register.html", {"form": form})
+    return render(request, "accounts/register_modern.html", {"form": form})
 
 
 def login_view(request):
@@ -31,11 +31,13 @@ def login_view(request):
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             login(request, form.get_user())
+            if not request.POST.get("remember_me"):
+                request.session.set_expiry(0)
             return redirect("/app/dashboard/")
     else:
         form = LoginForm()
 
-    return render(request, "accounts/login.html", {"form": form})
+    return render(request, "accounts/login_modern.html", {"form": form})
 
 
 def logout_view(request):

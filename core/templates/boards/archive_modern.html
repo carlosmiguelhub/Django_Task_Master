@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Archive — Task Master{% endblock %}
+
+{% block body %}
+<section class="tm-content-page">
+  <header class="tm-content-header">
+    <div>
+      <h1>Archive</h1>
+      <p>Completed work kept out of the way, but never out of reach.</p>
+    </div>
+    <a href="{% url 'boards:list' %}" class="tm-button tm-button-secondary">← Back to boards</a>
+  </header>
+
+  <div class="tm-card-grid">
+    {% for t in tasks %}
+      <article class="tm-content-card">
+        <div class="tm-card-head">
+          <div>
+            <h2 class="tm-card-title">{{ t.title }}</h2>
+            <p class="tm-card-meta">{{ t.board.name }}</p>
+          </div>
+          <span class="tm-badge tm-badge-success">✓ Done</span>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:16px;">
+          {% if t.completed_late %}
+            <span class="tm-badge tm-badge-danger">Completed late</span>
+          {% else %}
+            <span class="tm-badge tm-badge-info">Completed on time</span>
+          {% endif %}
+          {% if t.completed_at %}
+            <span class="tm-card-meta">{{ t.completed_at|date:"M d, Y" }} at {{ t.completed_at|time:"g:i a" }}</span>
+          {% endif %}
+        </div>
+
+        <div class="tm-card-foot">
+          <span class="tm-card-meta">Archived task</span>
+          <form method="post" action="{% url 'boards:task_delete' t.id %}">
+            {% csrf_token %}
+            <button type="submit" class="tm-button tm-button-secondary tm-danger-button" title="Delete permanently">Delete</button>
+          </form>
+        </div>
+      </article>
+    {% empty %}
+      <div class="tm-empty-card">
+        <strong>No archived tasks yet</strong>
+        Completed tasks you archive will appear here.
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

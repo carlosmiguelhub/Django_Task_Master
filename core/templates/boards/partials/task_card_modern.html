@@ -1,0 +1,63 @@
+<article class="kanban-task {% if task.is_overdue %}is-overdue{% endif %}">
+  <div class="kanban-task-head">
+    <span class="task-priority task-priority-{{ task.priority }}">
+      <i></i>{{ task.get_priority_display }}
+    </span>
+    <a href="{% url 'boards:task_update' task.id %}" class="kanban-edit" aria-label="Edit {{ task.title }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-.8 4.8L8 20l11-11-4-4L4 16zM13.5 6.5l4 4"/></svg>
+    </a>
+  </div>
+
+  <h3>{{ task.title }}</h3>
+  {% if task.description %}<p class="kanban-task-description">{{ task.description|truncatechars:145 }}</p>{% endif %}
+
+  <div class="kanban-due {% if task.is_overdue %}danger{% endif %}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+    <span>
+      {% if task.is_overdue %}<strong>Overdue · </strong>{% endif %}
+      {{ task.due_date|date:"M j, Y" }} at {{ task.due_time|time:"g:i A" }}
+    </span>
+  </div>
+
+  <div class="kanban-task-progress">
+    <div class="kanban-progress-track">
+      <span style="width: {{ task.timeline_percent }}%"></span>
+    </div>
+    {% if task.status == "done" %}
+      <small>{% if task.completed_late %}Completed late{% else %}Completed on time{% endif %}</small>
+    {% elif task.is_overdue %}
+      <small>Deadline passed</small>
+    {% else %}
+      <small>Time elapsed</small>
+    {% endif %}
+  </div>
+
+  <footer class="kanban-task-actions">
+    {% if task.status == "pending" %}
+      <form method="post" action="{% url 'boards:task_start' task.id %}">
+        {% csrf_token %}
+        <button type="submit" class="task-action task-action-primary">
+          Start task
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </form>
+    {% elif task.status == "in_progress" %}
+      <form method="post" action="{% url 'boards:task_complete' task.id %}">
+        {% csrf_token %}
+        <button type="submit" class="task-action task-action-success">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+          Mark complete
+        </button>
+      </form>
+    {% else %}
+      <form method="post" action="{% url 'boards:task_archive' task.id %}">
+        {% csrf_token %}
+        <button type="submit" class="task-action task-action-subtle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M5 7l1 13h12l1-13M9 11h6M4 4h16v3H4z"/></svg>
+          Archive
+        </button>
+      </form>
+      {% if task.completed_at %}<time>Finished {{ task.completed_at|date:"M j" }}</time>{% endif %}
+    {% endif %}
+  </footer>
+</article>

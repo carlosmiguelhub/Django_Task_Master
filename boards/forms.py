@@ -19,7 +19,12 @@ class TaskCreateForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ["title", "priority", "due_date", "due_time"]  # EXCLUDE documents + status
+        fields = ["title", "description", "priority", "due_date", "due_time"]
 
     def clean_title(self):
         return self.cleaned_data["title"].strip()
+
+
+class TaskUpdateForm(TaskCreateForm):
+    class Meta(TaskCreateForm.Meta):
+        fields = ["title", "description", "priority", "due_date", "due_time"]

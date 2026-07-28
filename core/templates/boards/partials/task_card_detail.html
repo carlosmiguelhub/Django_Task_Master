@@ -22,6 +22,10 @@
     </div>
   </div>
 
+  {% if t.description %}
+    <p class="task-description">{{ t.description|truncatechars:150 }}</p>
+  {% endif %}
+
   {# ✅ Only show overdue UI for non-done tasks (JS will toggle it) #}
   {% if t.status != "done" %}
     <div class="overdue">
@@ -70,6 +74,7 @@
           <button type="submit" class="task-btn complete">✓ Complete</button>
         </form>
       {% endif %}
+      <a href="{% url 'boards:task_update' t.id %}" class="task-btn" style="text-decoration:none;">Edit</a>
     </div>
   {% endif %}
 </div>

@@ -283,9 +283,15 @@
 
 <div class="wrap">
   <div class="topbar">
-    <a class="back" href="/app/dashboard/">
-      <span style="font-size:18px;">←</span> Back to Dashboard
-    </a>
+    <div>
+      <a class="back" href="{% url 'boards:list' %}">
+        <span style="font-size:18px;">&larr;</span> Back to boards
+      </a>
+      <div class="tm-board-context">
+        <h1>{{ board.name }}</h1>
+        <p>{{ board.description|default:"Track the work that matters and keep every task moving." }}</p>
+      </div>
+    </div>
 
     <div class="actions">
       <a class="btn dark" type="button" href="{% url 'boards:archive_list' %}">
@@ -294,14 +300,6 @@
         </svg>
         View Archive
       </a>
-
-      <button class="btn purple" type="button">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <path d="M14 2v6h6"></path>
-        </svg>
-        View Documents
-      </button>
 
       <button id="openTaskModal" class="btn blue" type="button">
         <span style="font-size:18px; line-height:0;">+</span> Add Task
@@ -402,6 +400,12 @@
         <label class="label">Task title</label>
         <input class="input" name="title" placeholder="Task title" required />
         {% if form.title.errors %}<div class="err">{{ form.title.errors|striptags }}</div>{% endif %}
+      </div>
+
+      <div class="field">
+        <label class="label">Description <span style="font-weight:500; opacity:.7;">(optional)</span></label>
+        <textarea class="input" name="description" rows="3" placeholder="Add useful context for this task" style="resize:vertical; min-height:92px;">{{ form.description.value|default_if_none:'' }}</textarea>
+        {% if form.description.errors %}<div class="err">{{ form.description.errors|striptags }}</div>{% endif %}
       </div>
 
       <div class="field">

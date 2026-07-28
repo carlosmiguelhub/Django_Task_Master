@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ board.name }} — Task Master{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/boards.css' %}">
+{% endblock %}
+
+{% block body %}
+<section class="board-page board-detail-page">
+  <div class="board-shell board-shell-wide">
+    <a href="{% url 'boards:list' %}" class="board-back">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      All boards
+    </a>
+
+    <header class="board-hero board-detail-hero">
+      <div>
+        <span class="board-eyebrow">Project board</span>
+        <h1>{{ board.name }}</h1>
+        <p>{{ board.description|default:"Organize priorities and keep the work moving." }}</p>
+      </div>
+      <div class="board-hero-actions">
+        <a href="{% url 'planner:index' %}" class="tm-button tm-button-secondary">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+          Planner
+        </a>
+        <button type="button" class="tm-button tm-button-primary" data-dialog-open="create-task-dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Add task
+        </button>
+      </div>
+    </header>
+
+    <div class="board-detail-summary">
+      <div class="board-completion">
+        <div>
+          <span>Overall progress</span>
+          <strong>{{ completed_percent }}%</strong>
+        </div>
+        <div class="board-progress"><span style="width: {{ completed_percent }}%"></span></div>
+      </div>
+      <div class="board-mini-stat"><strong>{{ total_count }}</strong><span>Total</span></div>
+      <div class="board-mini-stat"><strong>{{ progress|length }}</strong><span>In progress</span></div>
+      <div class="board-mini-stat"><strong>{{ done|length }}</strong><span>Completed</span></div>
+    </div>
+
+    <div class="kanban-grid">
+      <section class="kanban-column kanban-pending">
+        <header class="kanban-column-head">
+          <div>
+            <span class="kanban-column-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+            <div><h2>To do</h2><p>Ready to be picked up</p></div>
+          </div>
+          <span class="kanban-count">{{ pending|length }}</span>
+        </header>
+        <div class="kanban-column-body">
+          {% for task in pending %}
+            {% include "boards/partials/task_card_modern.html" %}
+          {% empty %}
+            <div class="kanban-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+              <strong>Nothing waiting</strong>
+              <span>New tasks will appear here.</span>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="kanban-column kanban-progress">
+        <header class="kanban-column-head">
+          <div>
+            <span class="kanban-column-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7L8 5z"/></svg></span>
+            <div><h2>In progress</h2><p>Currently being worked on</p></div>
+          </div>
+          <span class="kanban-count">{{ progress|length }}</span>
+        </header>
+        <div class="kanban-column-body">
+          {% for task in progress %}
+            {% include "boards/partials/task_card_modern.html" %}
+          {% empty %}
+            <div class="kanban-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7L8 5z"/></svg>
+              <strong>No active tasks</strong>
+              <span>Start a task when you are ready.</span>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="kanban-column kanban-done">
+        <header class="kanban-column-head">
+          <div>
+            <span class="kanban-column-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></span>
+            <div><h2>Completed</h2><p>Finished and ready to archive</p></div>
+          </div>
+          <span class="kanban-count">{{ done|length }}</span>
+        </header>
+        <div class="kanban-column-body">
+          {% for task in done %}
+            {% include "boards/partials/task_card_modern.html" %}
+          {% empty %}
+            <div class="kanban-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+              <strong>No completed tasks</strong>
+              <span>Your wins will collect here.</span>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<dialog class="board-dialog" id="create-task-dialog" {% if form.errors %}data-open-on-load{% endif %}>
+  <form method="post" class="board-dialog-card board-task-dialog" novalidate>
+    {% csrf_token %}
+    <header>
+      <span class="board-dialog-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+      <div><h2>Create a task</h2><p>Add a clear outcome and a realistic deadline.</p></div>
+      <button type="button" class="board-dialog-close" data-dialog-close aria-label="Close">&times;</button>
+    </header>
+    <div class="board-dialog-body board-form-grid">
+      <div class="board-field-full">
+        <label for="id_title">Task title</label>
+        <input class="board-input" id="id_title" name="title" maxlength="200" value="{{ form.title.value|default:'' }}" placeholder="What needs to be done?" required autofocus>
+        {% if form.title.errors %}<p class="board-field-error">{{ form.title.errors|striptags }}</p>{% endif %}
+      </div>
+      <div class="board-field-full">
+        <label for="id_description">Description <span>Optional</span></label>
+        <textarea class="board-input" id="id_description" name="description" rows="4" placeholder="Add context, expectations, or helpful notes.">{{ form.description.value|default:'' }}</textarea>
+        {% if form.description.errors %}<p class="board-field-error">{{ form.description.errors|striptags }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="id_priority">Priority</label>
+        <select class="board-input" id="id_priority" name="priority" required>
+          {% for value, label in form.fields.priority.choices %}
+            <option value="{{ value }}" {% if form.priority.value == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="id_due_date">Due date</label>
+        <input class="board-input" id="id_due_date" type="date" name="due_date" value="{{ form.due_date.value|date:'Y-m-d'|default:form.due_date.value }}" required>
+        {% if form.due_date.errors %}<p class="board-field-error">{{ form.due_date.errors|striptags }}</p>{% endif %}
+      </div>
+      <div class="board-field-full">
+        <label for="id_due_time">Due time</label>
+        <input class="board-input" id="id_due_time" type="time" name="due_time" value="{{ form.due_time.value|time:'H:i'|default:form.due_time.value }}" required>
+        {% if form.due_time.errors %}<p class="board-field-error">{{ form.due_time.errors|striptags }}</p>{% endif %}
+      </div>
+    </div>
+    <footer>
+      <button type="button" class="tm-button tm-button-secondary" data-dialog-close>Cancel</button>
+      <button type="submit" class="tm-button tm-button-primary">Create task</button>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/board-detail.js' %}"></script>
+{% endblock %}
