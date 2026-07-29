@@ -12,11 +12,19 @@
   const statusFilter = document.getElementById("plannerStatusFilter");
   const sourceFilters = Array.from(document.querySelectorAll("[data-source-filter]"));
   const viewButtons = Array.from(document.querySelectorAll("[data-view]"));
+  const dayDialog = document.getElementById("plannerDayDialog");
+  const dayTitle = document.getElementById("plannerDayTitle");
+  const dayDetails = document.getElementById("plannerDayDetails");
+  const daySummary = document.getElementById("plannerDaySummary");
+  const addEventFromDay = document.getElementById("addEventFromDay");
 
   const dialog = document.getElementById("plannerEventDialog");
   const eventForm = document.getElementById("plannerEventForm");
   const eventId = document.getElementById("plannerEventId");
   const eventTitle = document.getElementById("plannerEventTitle");
+  const eventType = document.getElementById("plannerEventType");
+  const eventLocation = document.getElementById("plannerEventLocation");
+  const eventMeetingUrl = document.getElementById("plannerEventMeetingUrl");
   const eventDescription = document.getElementById("plannerEventDescription");
   const eventAllDay = document.getElementById("plannerEventAllDay");
   const startDateInput = document.getElementById("plannerStartDate");
@@ -34,6 +42,7 @@
     rangeStart: null,
     rangeEnd: null,
     toastTimer: null,
+    selectedDay: null,
   };
 
   const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -186,9 +195,9 @@
   }
 
   function updateSummary(items) {
-    document.getElementById("visibleTaskCount").textContent = items.filter(
-      (item) => item.source === "task"
-    ).length;
+    document.getElementById("visibleTaskCount").textContent = new Set(
+      items.filter((item) => item.source === "task").map((item) => item.item_id)
+    ).size;
     document.getElementById("visibleEventCount").textContent = items.filter(
       (item) => item.source === "event"
     ).length;
@@ -201,6 +210,7 @@
     return [
       `source-${item.source}`,
       `status-${item.status}`,
+      `kind-${item.kind || item.source}`,
       item.overdue ? "is-overdue" : "",
     ]
       .filter(Boolean)
@@ -208,7 +218,12 @@
   }
 
   function itemTime(item) {
-    return item.all_day ? "All day" : timeFormatter.format(itemDate(item));
+    if (item.all_day) return "All day";
+    const start = timeFormatter.format(itemDate(item));
+    if (item.kind === "work_block" && item.end) {
+      return `${start}–${timeFormatter.format(new Date(item.end))}`;
+    }
+    return start;
   }
 
   function itemMarkup(item, includeTime = false) {
@@ -217,7 +232,7 @@
         type="button"
         class="planner-item ${itemClasses(item)}"
         data-planner-item="${escapeHtml(item.id)}"
-        draggable="true"
+        draggable="${item.kind !== "deadline"}"
         title="${escapeHtml(`${item.title} · ${item.board}`)}"
       >
         ${includeTime ? `<span class="planner-item-time">${escapeHtml(itemTime(item))}</span>` : ""}
@@ -233,9 +248,11 @@
 
       element.addEventListener("click", (event) => {
         event.stopPropagation();
+        if (item.source === "task") return;
         openItem(item);
       });
 
+      if (item.kind === "deadline") return;
       element.addEventListener("dragstart", (event) => {
         event.stopPropagation();
         event.dataTransfer.effectAllowed = "move";
@@ -275,6 +292,105 @@
     });
   }
 
+  function itemsForDay(key) {
+    const dayStart = parseDateKey(key);
+    const dayEnd = addDays(dayStart, 1);
+    return state.items
+      .filter((item) => {
+        const start = itemDate(item);
+        const end = item.end ? new Date(item.end) : start;
+        return start < dayEnd && end >= dayStart;
+      })
+      .sort((a, b) => itemDate(a) - itemDate(b));
+  }
+
+  function dayItemLabel(item) {
+    if (item.source === "event") return item.all_day ? "All-day event" : "Event";
+    return item.kind === "work_block" ? "Work block" : "Task deadline";
+  }
+
+  function openDayDialog(key) {
+    const items = itemsForDay(key);
+    const day = parseDateKey(key);
+    const hasAllDayEvent = items.some(
+      (item) => item.source === "event" && item.all_day
+    );
+    state.selectedDay = key;
+    dayTitle.textContent = fullDateFormatter.format(day);
+    daySummary.textContent = items.length
+      ? `${items.length} ${items.length === 1 ? "item" : "items"} on this day`
+      : "No items scheduled";
+    addEventFromDay.disabled = key < dateKey(new Date()) || hasAllDayEvent;
+    addEventFromDay.textContent = hasAllDayEvent ? "All day reserved" : "Add event";
+
+    if (!items.length) {
+      dayDetails.innerHTML = `
+        <div class="planner-day-detail-empty">
+          <span>✓</span>
+          <strong>Your day is open</strong>
+          <p>Add an event or drag a task here when you are ready.</p>
+        </div>
+      `;
+    } else {
+      dayDetails.innerHTML = items
+        .map(
+          (item) => `
+            <div class="planner-day-detail-item ${itemClasses(item)}" data-day-detail-item="${escapeHtml(item.id)}">
+              <span class="planner-day-detail-type">${escapeHtml(dayItemLabel(item))}</span>
+              <span class="planner-day-detail-copy">
+                <strong>${escapeHtml(item.title)}</strong>
+                ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
+                <span class="planner-day-detail-meta">
+                  <b>${escapeHtml(itemTime(item))}</b>
+                  <i>${escapeHtml(item.board)}</i>
+                  ${item.source === "task" ? `<i>${escapeHtml(item.status.replace("_", " "))}</i><i>${escapeHtml(item.priority)} priority</i><i>${item.estimated_minutes} min estimate</i>` : ""}
+                  ${item.source === "event" && item.event_type_label ? `<i>${escapeHtml(item.event_type_label)}</i>` : ""}
+                  ${item.source === "event" && item.location ? `<i>${escapeHtml(item.location)}</i>` : ""}
+                </span>
+                ${item.source === "event" && item.meeting_url ? `<a class="planner-day-meeting-link" href="${escapeHtml(item.meeting_url)}" target="_blank" rel="noopener noreferrer">Open meeting link <span aria-hidden="true">↗</span></a>` : ""}
+              </span>
+              <span class="planner-day-detail-actions">
+                ${item.source === "event" ? `<button type="button" data-edit-day-event="${escapeHtml(item.id)}">Edit event</button>` : ""}
+                ${item.kind === "work_block" ? `<button type="button" class="danger" data-remove-work-block="${item.item_id}">Remove block</button>` : ""}
+              </span>
+            </div>
+          `
+        )
+        .join("");
+      dayDetails.querySelectorAll("[data-edit-day-event]").forEach((element) => {
+        element.addEventListener("click", () => {
+          const item = state.items.find(
+            (entry) => entry.id === element.dataset.editDayEvent
+          );
+          if (!item) return;
+          dayDialog.close();
+          openItem(item);
+        });
+      });
+      dayDetails.querySelectorAll("[data-remove-work-block]").forEach((element) => {
+        element.addEventListener("click", async () => {
+          element.disabled = true;
+          try {
+            await apiRequest(
+              app.dataset.unscheduleUrlTemplate.replace(
+                "__id__",
+                element.dataset.removeWorkBlock
+              ),
+              { method: "POST", body: "{}" }
+            );
+            dayDialog.close();
+            showToast("Work block removed. The task and deadline were kept.");
+            await loadItems();
+          } catch (error) {
+            element.disabled = false;
+            showToast(error.message || "Unable to remove the work block.", true);
+          }
+        });
+      });
+    }
+    dayDialog.showModal();
+  }
+
   function renderMonth(items) {
     const { start } = monthRange(state.anchor);
     const grouped = groupByDate(items);
@@ -307,11 +423,7 @@
     calendar.querySelectorAll(".planner-day").forEach((dayElement) => {
       const day = parseDateKey(dayElement.dataset.date);
       dayElement.addEventListener("click", () => {
-        if (dayElement.dataset.date < dateKey(new Date())) {
-          showToast("New events can only be added today or later.", true);
-          return;
-        }
-        openCreateDialog(dayElement.dataset.date);
+        openDayDialog(dayElement.dataset.date);
       });
       attachDropTarget(dayElement, day);
     });
@@ -343,13 +455,7 @@
 
     calendar.querySelectorAll(".planner-week-column").forEach((column) => {
       const day = parseDateKey(column.dataset.date);
-      column.addEventListener("dblclick", () => {
-        if (column.dataset.date < dateKey(new Date())) {
-          showToast("New events can only be added today or later.", true);
-          return;
-        }
-        openCreateDialog(column.dataset.date);
-      });
+      column.addEventListener("click", () => openDayDialog(column.dataset.date));
       attachDropTarget(column, day);
     });
     attachItemInteractions(calendar);
@@ -502,7 +608,6 @@
 
   function openItem(item) {
     if (item.source === "task") {
-      window.location.href = item.url;
       return;
     }
 
@@ -510,6 +615,9 @@
     const end = item.end ? new Date(item.end) : new Date(start.getTime() + 60 * 60 * 1000);
     eventId.value = item.item_id;
     eventTitle.value = item.title;
+    eventType.value = item.event_type || "meeting";
+    eventLocation.value = item.location || "";
+    eventMeetingUrl.value = item.meeting_url || "";
     eventDescription.value = item.description || "";
     eventAllDay.checked = item.all_day;
     startDateInput.value = formatInputDate(start);
@@ -533,6 +641,9 @@
     const endTime = allDay ? "23:59" : endTimeInput.value;
     return {
       title: eventTitle.value.trim(),
+      event_type: eventType.value,
+      location: eventLocation.value.trim(),
+      meeting_url: eventMeetingUrl.value.trim(),
       description: eventDescription.value.trim(),
       all_day: allDay,
       start_at: `${startDateInput.value}T${startTime}:00`,
@@ -592,6 +703,13 @@
     loadItems();
   });
   document.getElementById("newPlannerEvent").addEventListener("click", () => openCreateDialog());
+  document.getElementById("closePlannerDayDialog").addEventListener("click", () => dayDialog.close());
+  addEventFromDay.addEventListener("click", () => {
+    if (!state.selectedDay || addEventFromDay.disabled) return;
+    const selectedDay = state.selectedDay;
+    dayDialog.close();
+    openCreateDialog(selectedDay);
+  });
   document.getElementById("closePlannerDialog").addEventListener("click", () => dialog.close());
   document.getElementById("cancelPlannerEvent").addEventListener("click", () => dialog.close());
   deleteButton.addEventListener("click", deleteEvent);
@@ -607,6 +725,9 @@
   eventForm.addEventListener("submit", (event) => {
     event.preventDefault();
     saveEvent();
+  });
+  dayDialog.addEventListener("click", (event) => {
+    if (event.target === dayDialog) dayDialog.close();
   });
 
   setView(state.view);

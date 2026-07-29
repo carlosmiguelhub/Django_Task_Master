@@ -60,3 +60,17 @@ class TaskManagementTests(TestCase):
             reverse("boards:detail", args=[self.board.id]),
         )
         self.assertFalse(Task.objects.filter(id=self.task.id).exists())
+
+    def test_active_task_renders_live_deadline_timer(self):
+        self.client.force_login(self.owner)
+
+        response = self.client.get(
+            reverse("boards:detail", args=[self.board.id])
+        )
+
+        self.assertContains(response, "data-task-timer")
+        self.assertContains(response, "data-created-at")
+        self.assertContains(response, "data-due-at")
+        self.assertContains(response, "data-time-left")
+        self.assertContains(response, 'data-task-view="board"')
+        self.assertContains(response, 'data-task-view="list"')

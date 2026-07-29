@@ -25,24 +25,17 @@
       <header class="tm-nav">
         <div class="tm-container tm-nav-inner">
           <a href="{% if request.user.is_authenticated %}{% url 'app:dashboard' %}{% else %}{% url 'core:landing' %}{% endif %}" class="tm-brand" aria-label="Task Master home">
-            <span class="tm-brand-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 11l3 3L22 4"></path>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-              </svg>
-            </span>
-            <span class="tm-brand-copy">
-              <span class="tm-brand-name">Task Master</span>
-              <span class="tm-brand-tagline">Plan clearly. Finish confidently.</span>
+            <span class="tm-brand-logo-frame">
+              <img class="tm-brand-logo-image" src="{% static 'images/task-master-logo.png' %}" alt="Task Master">
             </span>
           </a>
 
           {% if request.user.is_authenticated %}
             <nav class="tm-nav-links" aria-label="Primary navigation">
-              <a href="{% url 'app:dashboard' %}" class="tm-nav-link">Dashboard</a>
-              <a href="{% url 'boards:list' %}" class="tm-nav-link">Boards</a>
-              <a href="{% url 'planner:index' %}" class="tm-nav-link">Planner</a>
-              <a href="{% url 'boards:archive_list' %}" class="tm-nav-link">Archive</a>
+              <a href="{% url 'app:dashboard' %}" class="tm-nav-link{% if request.resolver_match.namespace == 'app' %} active{% endif %}"{% if request.resolver_match.namespace == 'app' %} aria-current="page"{% endif %}>Dashboard</a>
+              <a href="{% url 'boards:list' %}" class="tm-nav-link{% if request.resolver_match.namespace == 'boards' and request.resolver_match.url_name != 'archive_list' %} active{% endif %}"{% if request.resolver_match.namespace == 'boards' and request.resolver_match.url_name != 'archive_list' %} aria-current="page"{% endif %}>Boards</a>
+              <a href="{% url 'planner:index' %}" class="tm-nav-link{% if request.resolver_match.namespace == 'planner' %} active{% endif %}"{% if request.resolver_match.namespace == 'planner' %} aria-current="page"{% endif %}>Planner</a>
+              <a href="{% url 'boards:archive_list' %}" class="tm-nav-link{% if request.resolver_match.namespace == 'boards' and request.resolver_match.url_name == 'archive_list' %} active{% endif %}"{% if request.resolver_match.namespace == 'boards' and request.resolver_match.url_name == 'archive_list' %} aria-current="page"{% endif %}>Archive</a>
             </nav>
           {% endif %}
 

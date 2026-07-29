@@ -38,6 +38,21 @@
     });
   });
 
+  document.querySelectorAll("[data-auth-form]").forEach((form) => {
+    form.addEventListener("submit", function () {
+      const button = form.querySelector("[data-auth-submit]");
+      if (!button || button.disabled) return;
+
+      const label = button.querySelector("[data-auth-submit-label]");
+      button.disabled = true;
+      button.classList.add("is-loading");
+      button.setAttribute("aria-busy", "true");
+      if (label && button.dataset.loadingLabel) {
+        label.textContent = button.dataset.loadingLabel;
+      }
+    });
+  });
+
   const profileButton = document.getElementById("profileBtn");
   const profileMenu = document.getElementById("profileDropdown");
   const profileWrap = document.getElementById("profileMenu");

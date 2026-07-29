@@ -2,6 +2,8 @@ import datetime
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -37,18 +39,62 @@ def _event_values(data):
     if not title:
         raise ValueError("Event title is required.")
 
+    event_type = (data.get("event_type") or CalendarEvent.EventType.MEETING).strip()
+    if event_type not in CalendarEvent.EventType.values:
+        raise ValueError("Choose a valid event type.")
+
+    location = (data.get("location") or "").strip()
+    if len(location) > 240:
+        raise ValueError("Location must be 240 characters or fewer.")
+
+    meeting_url = (data.get("meeting_url") or "").strip()
+    if meeting_url:
+        try:
+            URLValidator(schemes=["http", "https"])(meeting_url)
+        except ValidationError as exc:
+            raise ValueError("Enter a valid http or https meeting link.") from exc
+
     start_at = _aware_datetime(data.get("start_at"), "start time")
     end_at = _aware_datetime(data.get("end_at"), "end time")
     if end_at <= start_at:
         raise ValueError("End time must be after the start time.")
 
+    all_day = bool(data.get("all_day"))
+    if all_day:
+        local_start = timezone.localtime(start_at)
+        local_end = timezone.localtime(end_at)
+        start_at = timezone.make_aware(
+            datetime.datetime.combine(local_start.date(), datetime.time.min),
+            timezone.get_current_timezone(),
+        )
+        end_at = timezone.make_aware(
+            datetime.datetime.combine(local_end.date(), datetime.time.max),
+            timezone.get_current_timezone(),
+        )
+
     return {
         "title": title,
+        "event_type": event_type,
+        "location": location,
+        "meeting_url": meeting_url,
         "description": (data.get("description") or "").strip(),
         "start_at": start_at,
         "end_at": end_at,
-        "all_day": bool(data.get("all_day")),
+        "all_day": all_day,
     }
+
+
+def _event_conflicts_with_all_day(user, values, exclude_event_id=None):
+    overlapping = CalendarEvent.objects.filter(
+        user=user,
+        start_at__lt=values["end_at"],
+        end_at__gt=values["start_at"],
+    )
+    if exclude_event_id:
+        overlapping = overlapping.exclude(id=exclude_event_id)
+    if values["all_day"]:
+        return overlapping.exists()
+    return overlapping.filter(all_day=True).exists()
 
 
 def _is_past_date(value):
@@ -73,16 +119,6 @@ def planner_items(request):
     if end_date < start_date:
         return JsonResponse({"error": "Invalid date range."}, status=400)
 
-    tasks = (
-        Task.objects.filter(
-            board__owner=request.user,
-            is_archived=False,
-            due_date__range=(start_date, end_date),
-        )
-        .select_related("board")
-        .order_by("due_date", "due_time", "title")
-    )
-
     range_start = timezone.make_aware(
         datetime.datetime.combine(start_date, datetime.time.min),
         timezone.get_current_timezone(),
@@ -93,6 +129,20 @@ def planner_items(request):
             datetime.time.min,
         ),
         timezone.get_current_timezone(),
+    )
+    tasks = (
+        Task.objects.filter(
+            Q(due_date__range=(start_date, end_date))
+            | Q(
+                scheduled_start__lt=range_end,
+                scheduled_end__gte=range_start,
+            ),
+            board__owner=request.user,
+            is_archived=False,
+        )
+        .select_related("board")
+        .distinct()
+        .order_by("due_date", "due_time", "title")
     )
     calendar_events = (
         CalendarEvent.objects.filter(
@@ -106,37 +156,55 @@ def planner_items(request):
     items = []
     now = timezone.now()
     for task in tasks:
-        if task.due_time:
-            task_start = timezone.make_aware(
-                datetime.datetime.combine(task.due_date, task.due_time),
-                timezone.get_current_timezone(),
+        common = {
+            "item_id": task.id,
+            "source": "task",
+            "title": task.title,
+            "description": task.description,
+            "status": task.status,
+            "priority": task.priority,
+            "board_id": task.board_id,
+            "board": task.board.name,
+            "url": reverse("boards:task_update", args=[task.id]),
+            "estimated_minutes": task.estimated_minutes,
+        }
+        if task.due_date and start_date <= task.due_date <= end_date:
+            if task.due_time:
+                task_start = timezone.make_aware(
+                    datetime.datetime.combine(task.due_date, task.due_time),
+                    timezone.get_current_timezone(),
+                )
+                start_value = timezone.localtime(task_start).isoformat()
+                all_day = False
+                overdue = task.status != Task.Status.DONE and task_start < now
+            else:
+                start_value = task.due_date.isoformat()
+                all_day = True
+                overdue = task.status != Task.Status.DONE and task.due_date < today
+            items.append(
+                {
+                    **common,
+                    "id": f"task-deadline-{task.id}",
+                    "kind": "deadline",
+                    "start": start_value,
+                    "end": None,
+                    "all_day": all_day,
+                    "overdue": overdue,
+                }
             )
-            start_value = timezone.localtime(task_start).isoformat()
-            all_day = False
-            overdue = task.status != Task.Status.DONE and task_start < now
-        else:
-            start_value = task.due_date.isoformat()
-            all_day = True
-            overdue = task.status != Task.Status.DONE and task.due_date < today
 
-        items.append(
-            {
-                "id": f"task-{task.id}",
-                "item_id": task.id,
-                "source": "task",
-                "title": task.title,
-                "description": task.description,
-                "start": start_value,
-                "end": None,
-                "all_day": all_day,
-                "status": task.status,
-                "priority": task.priority,
-                "board_id": task.board_id,
-                "board": task.board.name,
-                "overdue": overdue,
-                "url": reverse("boards:task_update", args=[task.id]),
-            }
-        )
+        if task.scheduled_start and task.scheduled_end:
+            items.append(
+                {
+                    **common,
+                    "id": f"task-block-{task.id}",
+                    "kind": "work_block",
+                    "start": timezone.localtime(task.scheduled_start).isoformat(),
+                    "end": timezone.localtime(task.scheduled_end).isoformat(),
+                    "all_day": False,
+                    "overdue": False,
+                }
+            )
 
     for event in calendar_events:
         items.append(
@@ -144,8 +212,13 @@ def planner_items(request):
                 "id": f"event-{event.id}",
                 "item_id": event.id,
                 "source": "event",
+                "kind": "event",
                 "title": event.title,
                 "description": event.description,
+                "event_type": event.event_type,
+                "event_type_label": event.get_event_type_display(),
+                "location": event.location,
+                "meeting_url": event.meeting_url,
                 "start": timezone.localtime(event.start_at).isoformat(),
                 "end": (
                     timezone.localtime(event.end_at).isoformat()
@@ -178,6 +251,16 @@ def event_create(request):
             {"error": "New events cannot be scheduled in the past."},
             status=400,
         )
+    if _event_conflicts_with_all_day(request.user, values):
+        return JsonResponse(
+            {
+                "error": (
+                    "This date is reserved by an all-day event, or already contains "
+                    "an event that prevents creating an all-day plan."
+                )
+            },
+            status=409,
+        )
 
     event = CalendarEvent.objects.create(user=request.user, **values)
     return JsonResponse({"id": event.id, "message": "Event created."}, status=201)
@@ -198,6 +281,20 @@ def event_update(request, event_id):
         return JsonResponse(
             {"error": "Events cannot be moved to a past date."},
             status=400,
+        )
+    if _event_conflicts_with_all_day(
+        request.user,
+        values,
+        exclude_event_id=event.id,
+    ):
+        return JsonResponse(
+            {
+                "error": (
+                    "This date is reserved by an all-day event, or already contains "
+                    "an event that prevents creating an all-day plan."
+                )
+            },
+            status=409,
         )
 
     for field, value in values.items():
@@ -235,8 +332,22 @@ def item_reschedule(request):
             board__owner=request.user,
             is_archived=False,
         )
-        task.due_date = new_date
-        task.save(update_fields=["due_date"])
+        local_start = (
+            timezone.localtime(task.scheduled_start)
+            if task.scheduled_start
+            else timezone.make_aware(
+                datetime.datetime.combine(new_date, datetime.time(9, 0)),
+                timezone.get_current_timezone(),
+            )
+        )
+        scheduled_start = timezone.make_aware(
+            datetime.datetime.combine(new_date, local_start.time()),
+            timezone.get_current_timezone(),
+        )
+        duration = datetime.timedelta(minutes=task.estimated_minutes or 60)
+        task.scheduled_start = scheduled_start
+        task.scheduled_end = scheduled_start + duration
+        task.save(update_fields=["scheduled_start", "scheduled_end"])
     elif data.get("source") == "event":
         event = get_object_or_404(CalendarEvent, id=item_id, user=request.user)
         local_start = timezone.localtime(event.start_at)
@@ -249,3 +360,20 @@ def item_reschedule(request):
         return JsonResponse({"error": "Unknown planner item."}, status=400)
 
     return JsonResponse({"message": "Schedule updated."})
+
+
+@require_POST
+@login_required
+def task_unschedule(request, task_id):
+    task = get_object_or_404(
+        Task,
+        id=task_id,
+        board__owner=request.user,
+        is_archived=False,
+    )
+    task.scheduled_start = None
+    task.scheduled_end = None
+    task.save(update_fields=["scheduled_start", "scheduled_end"])
+    return JsonResponse(
+        {"message": "Work block removed. The task and its deadline were kept."}
+    )

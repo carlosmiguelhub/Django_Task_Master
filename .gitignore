@@ -7,6 +7,7 @@ venv/
 # Local configuration and secrets
 .env
 .env.*
+!.env.example
 
 # Django runtime
 staticfiles/
@@ -23,3 +24,4 @@ Thumbs.db
 
 # Local validation artifacts
 *.png
+!static/images/task-master-logo.png

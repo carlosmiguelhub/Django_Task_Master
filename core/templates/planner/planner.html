@@ -15,13 +15,10 @@
   data-update-url-template="/planner/api/events/__id__/update/"
   data-delete-url-template="/planner/api/events/__id__/delete/"
   data-reschedule-url="{% url 'planner:reschedule' %}"
+  data-unschedule-url-template="/planner/api/tasks/__id__/unschedule/"
 >
   <header class="planner-page-header">
-    <div>
-      <div class="planner-kicker">Workspace calendar</div>
-      <h1>Planner</h1>
-      <p>See deadlines and personal events in one focused schedule.</p>
-    </div>
+    <h1>Planner</h1>
     <button type="button" class="tm-button tm-button-primary" id="newPlannerEvent">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
       New event
@@ -94,7 +91,7 @@
           </button>
         </div>
         <h2 id="plannerPeriodLabel">Loading schedule…</h2>
-        <div class="planner-toolbar-note">Drag an item to reschedule</div>
+        <div class="planner-toolbar-note">Drag work blocks or events to reschedule</div>
       </div>
 
       <div id="plannerLoading" class="planner-loading" role="status">
@@ -106,6 +103,25 @@
 
   <div class="planner-toast" id="plannerToast" role="status" aria-live="polite" hidden></div>
 </section>
+
+<dialog class="planner-dialog planner-day-dialog" id="plannerDayDialog">
+  <div class="planner-dialog-card">
+    <div class="planner-dialog-head">
+      <div>
+        <div class="planner-kicker">Day overview</div>
+        <h2 id="plannerDayTitle">Schedule details</h2>
+      </div>
+      <button type="button" class="planner-icon-button" id="closePlannerDayDialog" aria-label="Close day details">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <div class="planner-day-detail-body" id="plannerDayDetails"></div>
+    <div class="planner-dialog-actions planner-day-actions">
+      <span id="plannerDaySummary">No items scheduled</span>
+      <button type="button" class="tm-button tm-button-primary" id="addEventFromDay">Add event</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog class="planner-dialog" id="plannerEventDialog">
   <form method="dialog" class="planner-dialog-card" id="plannerEventForm">
@@ -125,9 +141,30 @@
         <label for="plannerEventTitle">Event title</label>
         <input class="tm-input" id="plannerEventTitle" type="text" maxlength="200" placeholder="e.g. Project review" required>
       </div>
+      <div class="planner-details-grid">
+        <div class="tm-field">
+          <label for="plannerEventType">Event type</label>
+          <select class="tm-input" id="plannerEventType">
+            <option value="meeting">Meeting</option>
+            <option value="focus">Focus session</option>
+            <option value="class">Class</option>
+            <option value="appointment">Appointment</option>
+            <option value="personal">Personal</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="tm-field">
+          <label for="plannerEventLocation">Location <span class="planner-optional">Optional</span></label>
+          <input class="tm-input" id="plannerEventLocation" type="text" maxlength="240" placeholder="Room, building, or address">
+        </div>
+      </div>
       <div class="tm-field">
-        <label for="plannerEventDescription">Description</label>
-        <textarea class="tm-input" id="plannerEventDescription" rows="3" placeholder="Add useful context" style="resize:vertical;"></textarea>
+        <label for="plannerEventMeetingUrl">Meeting link <span class="planner-optional">Optional</span></label>
+        <input class="tm-input" id="plannerEventMeetingUrl" type="url" maxlength="500" inputmode="url" placeholder="https://meet.example.com/...">
+      </div>
+      <div class="tm-field">
+        <label for="plannerEventDescription">Agenda or notes <span class="planner-optional">Optional</span></label>
+        <textarea class="tm-input" id="plannerEventDescription" rows="3" placeholder="Add an agenda, preparation notes, or useful context" style="resize:vertical;"></textarea>
       </div>
       <label class="planner-all-day">
         <input type="checkbox" id="plannerEventAllDay">

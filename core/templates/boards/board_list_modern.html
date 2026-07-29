@@ -8,14 +8,10 @@
 {% endblock %}
 
 {% block body %}
-<section class="board-page">
+<section class="board-page board-list-page">
   <div class="board-shell">
     <header class="board-hero">
-      <div>
-        <span class="board-eyebrow">Workspace</span>
-        <h1>Your boards</h1>
-        <p>Keep every project focused, visible, and moving toward completion.</p>
-      </div>
+      <h1>Boards</h1>
       <div class="board-hero-actions">
         <a href="{% url 'boards:archive_list' %}" class="tm-button tm-button-secondary">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M5 7l1 13h12l1-13M9 11h6M4 4h16v3H4z"/></svg>

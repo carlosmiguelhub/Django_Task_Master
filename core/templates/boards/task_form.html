@@ -36,7 +36,12 @@
         {% if form.priority.errors %}<p class="tm-field-error">{{ form.priority.errors|striptags }}</p>{% endif %}
       </div>
 
-      <div></div>
+      <div class="tm-field">
+        <label for="id_estimated_minutes">Estimated focus time</label>
+        <input id="id_estimated_minutes" class="tm-input" type="number" name="estimated_minutes" min="15" max="1440" step="15" value="{{ form.estimated_minutes.value|default:60 }}" required>
+        <p class="tm-field-help">Minutes you expect this task to take.</p>
+        {% if form.estimated_minutes.errors %}<p class="tm-field-error">{{ form.estimated_minutes.errors|striptags }}</p>{% endif %}
+      </div>
 
       <div class="tm-field">
         <label for="id_due_date">Due date</label>

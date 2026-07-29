@@ -18,6 +18,7 @@ def _decorate_task(task, now):
         due_dt = datetime.datetime.combine(task.due_date, due_time)
         due_dt = timezone.make_aware(due_dt, timezone.get_current_timezone())
 
+    task.due_at = due_dt
     task.is_overdue = bool(
         due_dt and task.status != Task.Status.DONE and due_dt < now
     )

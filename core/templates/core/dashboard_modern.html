@@ -1,54 +1,41 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Dashboard — Task Master{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
 
 {% block body %}
 <div class="tm-dashboard">
-  <aside class="tm-sidebar">
-    <p class="tm-sidebar-label">Workspace</p>
-    <nav class="tm-sidebar-nav" aria-label="Workspace navigation">
-      <a href="{% url 'app:dashboard' %}" class="tm-sidebar-link active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
-        Overview
-      </a>
-      <a href="{% url 'boards:list' %}" class="tm-sidebar-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16M15 4v16"></path></svg>
-        Boards
-      </a>
-      <a href="{% url 'boards:archive_list' %}" class="tm-sidebar-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M5 6v14h14V6M9 10h6"></path><path d="M4 3h16v3H4z"></path></svg>
-        Archive
-      </a>
-      <a href="{% url 'planner:index' %}" class="tm-sidebar-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg>
-        Planner
-      </a>
-      <span class="tm-sidebar-link disabled" title="Coming soon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m7 15 4-4 3 3 5-7"></path></svg>
-        Analytics · Soon
-      </span>
-    </nav>
-  </aside>
-
   <section class="tm-dashboard-main">
-    <div class="tm-page-heading">
-      <h1>Welcome back, {{ request.user.username }}.</h1>
-      <p>A clear snapshot of everything moving across your workspace.</p>
-    </div>
+    <header class="tm-dashboard-heading">
+      <div class="tm-page-heading">
+        <span class="tm-dashboard-date">{{ today|date:"l, F j" }}</span>
+        <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}.</h1>
+        <p>Here is what deserves your attention today.</p>
+      </div>
+      <div class="tm-dashboard-actions">
+        <a href="{% url 'planner:index' %}" class="tm-button tm-button-secondary">Open planner</a>
+        <a href="{% url 'boards:list' %}" class="tm-button tm-button-primary">View boards</a>
+      </div>
+    </header>
 
     <div class="tm-stats-grid">
       <article class="tm-stat-card">
         <div class="tm-stat-top">
-          <span class="tm-stat-label">Total tasks</span>
+          <span class="tm-stat-label">All tasks</span>
           <span class="tm-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span>
         </div>
         <div class="tm-stat-value">{{ counts.total|default:0 }}</div>
       </article>
       <article class="tm-stat-card">
         <div class="tm-stat-top">
-          <span class="tm-stat-label">Pending</span>
+          <span class="tm-stat-label">Due today</span>
           <span class="tm-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5"></path></svg></span>
         </div>
-        <div class="tm-stat-value">{{ counts.pending|default:0 }}</div>
+        <div class="tm-stat-value">{{ due_today_count }}</div>
+        <small>{{ overdue_count }} overdue</small>
       </article>
       <article class="tm-stat-card">
         <div class="tm-stat-top">
@@ -56,25 +43,305 @@
           <span class="tm-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12a8 8 0 0 1 8-8"></path><path d="M12 4v4h4"></path><path d="M20 12a8 8 0 0 1-8 8"></path></svg></span>
         </div>
         <div class="tm-stat-value">{{ counts.in_progress|default:0 }}</div>
+        <small>{{ upcoming_week_count }} due this week</small>
       </article>
       <article class="tm-stat-card">
         <div class="tm-stat-top">
-          <span class="tm-stat-label">Completed</span>
+          <span class="tm-stat-label">Completion</span>
           <span class="tm-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg></span>
         </div>
-        <div class="tm-stat-value">{{ counts.done|default:0 }}</div>
+        <div class="tm-stat-value">{{ completion_rate }}%</div>
+        <small>{{ counts.done|default:0 }} finished</small>
       </article>
     </div>
 
-    <div class="tm-dashboard-panel">
-      <div class="tm-panel-heading">
-        <h2>Your workspace</h2>
-        <a href="{% url 'planner:index' %}" class="tm-form-link">Open planner →</a>
-      </div>
-      <div class="tm-empty-state">
-        Review upcoming deadlines, plan personal events, or open a board to move work forward.
-      </div>
+    <div class="tm-dashboard-grid">
+      <section class="tm-dashboard-panel tm-focus-panel">
+        <div class="tm-panel-heading">
+          <div>
+            <span class="tm-panel-kicker">Priority queue</span>
+            <h2>Today’s focus</h2>
+          </div>
+          <span class="tm-panel-count">{{ focus_tasks|length }}</span>
+        </div>
+        <div class="tm-focus-list">
+          {% for task in focus_tasks %}
+            <a href="{% url 'boards:detail' task.board_id %}" class="tm-focus-item">
+              <span class="tm-focus-check {% if task.is_overdue %}danger{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5M12 16h.01"></path></svg>
+              </span>
+              <span class="tm-focus-copy">
+                <strong>{{ task.title }}</strong>
+                <small>{{ task.board.name }} · {{ task.get_priority_display }} priority</small>
+              </span>
+              <span class="tm-focus-due {% if task.is_overdue %}danger{% endif %}">
+                {% if task.is_overdue %}
+                  Overdue
+                {% elif task.is_due_today %}
+                  Today{% if task.due_time %}, {{ task.due_time|time:"g:i A" }}{% endif %}
+                {% elif task.due_date %}
+                  {{ task.due_date|date:"M j" }}
+                {% else %}
+                  No deadline
+                {% endif %}
+              </span>
+              <svg class="tm-focus-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+            </a>
+          {% empty %}
+            <div class="tm-dashboard-empty">
+              <span>✓</span>
+              <strong>Your focus list is clear.</strong>
+              <p>Create a task when you are ready to plan the next move.</p>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="tm-dashboard-panel tm-schedule-panel">
+        <div class="tm-panel-heading">
+          <div>
+            <span class="tm-panel-kicker">Calendar</span>
+            <h2>Coming up</h2>
+          </div>
+          <a href="{% url 'planner:index' %}" class="tm-panel-link">See planner</a>
+        </div>
+        <div class="tm-schedule-list">
+          {% for event in upcoming_events %}
+            <a href="{% url 'planner:index' %}" class="tm-schedule-item">
+              <time>
+                <strong>{{ event.start_at|date:"d" }}</strong>
+                <span>{{ event.start_at|date:"M" }}</span>
+              </time>
+              <span>
+                <strong>{{ event.title }}</strong>
+                <small>{% if event.all_day %}All day{% else %}{{ event.start_at|time:"g:i A" }}{% endif %}</small>
+              </span>
+            </a>
+          {% empty %}
+            <div class="tm-dashboard-empty compact">
+              <strong>No upcoming events.</strong>
+              <p>Your next seven days are open.</p>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="tm-dashboard-panel tm-momentum-panel">
+        <div class="tm-panel-heading">
+          <div>
+            <span class="tm-panel-kicker">Workspace health</span>
+            <h2>Board momentum</h2>
+          </div>
+          <a href="{% url 'boards:list' %}" class="tm-panel-link">All boards</a>
+        </div>
+        <div class="tm-momentum-grid">
+          {% for board in boards %}
+            <a href="{% url 'boards:detail' board.id %}" class="tm-momentum-item">
+              <span class="tm-momentum-mark">{{ board.name|slice:":1"|upper }}</span>
+              <span class="tm-momentum-copy">
+                <strong>{{ board.name }}</strong>
+                <small>{{ board.completed_count }}/{{ board.task_count }} tasks complete</small>
+                <span class="tm-momentum-track"><i style="width:{{ board.progress_percent }}%"></i></span>
+              </span>
+              <b>{{ board.progress_percent }}%</b>
+            </a>
+          {% empty %}
+            <div class="tm-dashboard-empty compact">
+              <strong>No boards yet.</strong>
+              <p>Create your first board to start tracking momentum.</p>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
     </div>
   </section>
 </div>
+
+<button type="button" class="tm-ai-launcher" id="aiDailyPlanLauncher" aria-label="Open AI Daily Plan">
+  <span class="tm-ai-launcher-glow"></span>
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 3.5 13.8 8l4.7 1.8-4.7 1.8L12 16l-1.8-4.4-4.7-1.8L10.2 8 12 3.5Z"></path>
+    <path d="m18.5 15 .8 2.1 2.2.9-2.2.8-.8 2.2-.9-2.2-2.1-.8 2.1-.9.9-2.1Z"></path>
+  </svg>
+  <span class="tm-ai-launcher-label">Daily Plan</span>
+</button>
+
+<dialog
+  class="tm-ai-dialog"
+  id="aiDailyPlanDialog"
+  data-plan-url="{% url 'app:daily_plan' %}"
+  data-chat-url="{% url 'app:daily_plan_chat' %}"
+  aria-labelledby="aiDailyPlanTitle"
+  aria-describedby="aiDailyPlanDescription"
+>
+  <div class="tm-ai-modal">
+    {% csrf_token %}
+    <header class="tm-ai-modal-head">
+      <div class="tm-ai-brand">
+        <span class="tm-ai-brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 13.8 8l4.7 1.8-4.7 1.8L12 16l-1.8-4.4-4.7-1.8L10.2 8 12 3.5Z"></path><path d="m18.5 15 .8 2.1 2.2.9-2.2.8-.8 2.2-.9-2.2-2.1-.8 2.1-.9.9-2.1Z"></path></svg>
+        </span>
+        <div>
+          <span>Task Master AI</span>
+          <h2 id="aiDailyPlanTitle">Your Daily Plan</h2>
+        </div>
+      </div>
+      <button type="button" class="tm-ai-close" data-ai-close aria-label="Close Daily Plan">&times;</button>
+    </header>
+
+    <div class="tm-ai-modal-body">
+      <section class="tm-ai-state tm-ai-intro" data-ai-state="intro">
+        <div class="tm-ai-hero-orb">
+          <span></span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 13.8 8l4.7 1.8-4.7 1.8L12 16l-1.8-4.4-4.7-1.8L10.2 8 12 3.5Z"></path></svg>
+        </div>
+        <span class="tm-ai-eyebrow">Your workspace assistant</span>
+        <h3>What can I help you with?</h3>
+        <p id="aiDailyPlanDescription">Choose a focused plan for today or have a natural conversation about your tasks, deadlines, and schedule.</p>
+        <div class="tm-ai-snapshot">
+          <span><strong>{{ counts.pending }}</strong> pending</span>
+          <span><strong>{{ overdue_count }}</strong> overdue</span>
+          <span><strong>{{ upcoming_week_count }}</strong> due this week</span>
+        </div>
+        <div class="tm-ai-choice-grid">
+          <button type="button" class="tm-ai-choice" data-ai-generate>
+            <span class="tm-ai-choice-icon">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 13.8 8l4.7 1.8-4.7 1.8L12 16l-1.8-4.4-4.7-1.8L10.2 8 12 3.5Z"></path></svg>
+            </span>
+            <span>
+              <strong>Generate Daily Plan</strong>
+              <small>Turn your current workload into a realistic focus plan.</small>
+            </span>
+            <b aria-hidden="true">→</b>
+          </button>
+          <button type="button" class="tm-ai-choice chat" data-ai-open-chat>
+            <span class="tm-ai-choice-icon">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z"></path><path d="M8 9h8M8 13h5"></path></svg>
+            </span>
+            <span>
+              <strong>Chat with AI</strong>
+              <small>Talk naturally about priorities, deadlines, and next steps.</small>
+            </span>
+            <b aria-hidden="true">→</b>
+          </button>
+        </div>
+        <small>Private to your workspace · AI never changes tasks on its own</small>
+      </section>
+
+      <section class="tm-ai-state tm-ai-loading" data-ai-state="loading" hidden>
+        <div class="tm-ai-loader">
+          <span class="tm-ai-loader-core"></span>
+          <i></i><i></i><i></i>
+        </div>
+        <span class="tm-ai-eyebrow">Designing your day</span>
+        <h3 data-ai-loading-title aria-live="polite">Reviewing your deadlines…</h3>
+        <p data-ai-loading-detail>Finding the clearest path through your current workload.</p>
+        <div class="tm-ai-loading-steps">
+          <span class="active">Reviewing urgency and priority</span>
+          <span>Balancing tasks with your calendar</span>
+          <span>Building a focused action plan</span>
+        </div>
+        <div class="tm-ai-loading-bar"><span></span></div>
+        <small class="tm-ai-loading-time" data-ai-loading-time>Working securely…</small>
+      </section>
+
+      <section class="tm-ai-state tm-ai-results" data-ai-state="results" hidden>
+        <div class="tm-ai-result-hero">
+          <span class="tm-ai-eyebrow">Your recommended focus</span>
+          <h3 data-ai-headline></h3>
+          <p data-ai-summary></p>
+        </div>
+        <div class="tm-ai-result-grid">
+          <section class="tm-ai-result-card tm-ai-priorities">
+            <header><span>01</span><h4>Priority order</h4></header>
+            <div data-ai-priorities></div>
+          </section>
+          <section class="tm-ai-result-card">
+            <header><span>02</span><h4>Suggested rhythm</h4></header>
+            <div class="tm-ai-schedule" data-ai-schedule></div>
+          </section>
+          <section class="tm-ai-result-card tm-ai-risks">
+            <header><span>03</span><h4>Watch closely</h4></header>
+            <ul data-ai-risks></ul>
+          </section>
+        </div>
+        <blockquote data-ai-encouragement></blockquote>
+        <footer class="tm-ai-results-actions">
+          <small data-ai-cache-label>Generated from your current workspace.</small>
+          <div class="tm-ai-results-buttons">
+            <button type="button" class="tm-button tm-button-secondary tm-ai-talk-button" data-ai-open-chat>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z"></path><path d="M8 9h8M8 13h5"></path></svg>
+              Talk to AI
+            </button>
+            <button type="button" class="tm-button tm-button-secondary" data-ai-regenerate>Regenerate</button>
+          </div>
+        </footer>
+      </section>
+
+      <section class="tm-ai-state tm-ai-chat" data-ai-state="chat" hidden>
+        <header class="tm-ai-chat-head">
+          <div>
+            <button type="button" class="tm-ai-chat-back" data-ai-chat-back>
+              <span aria-hidden="true">←</span> AI home
+            </button>
+            <h3>Talk through your workload</h3>
+            <p>Ask about priorities, deadlines, progress, or how to shape your day.</p>
+          </div>
+          <span class="tm-ai-scope-badge">
+            <i></i>
+            Workspace only
+          </span>
+        </header>
+
+        <div class="tm-ai-chat-messages" data-ai-chat-messages aria-live="polite">
+          <div class="tm-ai-message assistant">
+            <span class="tm-ai-message-avatar" aria-hidden="true">AI</span>
+            <div>
+              <strong>Task Master AI</strong>
+              <p>Hey! I can help you make sense of your current tasks and schedule. What do you want to figure out?</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tm-ai-chat-suggestions" data-ai-chat-suggestions>
+          <button type="button">What should I work on first?</button>
+          <button type="button">Am I at risk of missing anything?</button>
+          <button type="button">Help me plan the next two hours.</button>
+        </div>
+
+        <form class="tm-ai-chat-composer" data-ai-chat-form>
+          <div class="tm-ai-chat-input-wrap">
+            <textarea
+              data-ai-chat-input
+              rows="1"
+              maxlength="600"
+              placeholder="Ask about your workspace…"
+              aria-label="Message Task Master AI"
+            ></textarea>
+            <button type="submit" data-ai-chat-send aria-label="Send message">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7Z"></path><path d="M22 2 11 13"></path></svg>
+            </button>
+          </div>
+          <div class="tm-ai-chat-note">
+            <span>Answers are limited to your Task Master workspace.</span>
+            <span data-ai-chat-count>0 / 600</span>
+          </div>
+        </form>
+      </section>
+
+      <section class="tm-ai-state tm-ai-error" data-ai-state="error" hidden>
+        <span class="tm-ai-error-icon">!</span>
+        <span class="tm-ai-eyebrow">Plan unavailable</span>
+        <h3>We couldn’t generate your plan.</h3>
+        <p data-ai-error-message role="alert"></p>
+        <button type="button" class="tm-button tm-button-primary" data-ai-retry>Try again</button>
+      </section>
+    </div>
+  </div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

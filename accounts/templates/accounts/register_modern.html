@@ -1,29 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Create your account — Task Master{% endblock %}
 
-{% block body %}
-<div class="tm-auth-page">
-  <section class="tm-auth-story" aria-label="Task Master introduction">
-    <div class="tm-auth-story-content">
-      <div class="tm-auth-story-badge">Your workspace, your way</div>
-      <h1>Build a system your future self will thank you for.</h1>
-      <p>Start with one board, add the work that matters, and turn your plans into visible progress.</p>
-      <div class="tm-auth-proof">
-        <span>✓ Free to start</span>
-        <span>✓ Quick setup</span>
-        <span>✓ Light & dark mode</span>
-      </div>
-    </div>
-  </section>
+{% block navbar %}
+  {% include "components/public_theme_toggle.html" %}
+{% endblock %}
 
+{% block body %}
+<div class="tm-auth-page tm-auth-page-register">
   <section class="tm-auth-form-pane">
     <div class="tm-auth-card">
+      {% include "components/auth_brand.html" %}
+
       <div class="tm-auth-heading">
         <h2>Create your account</h2>
         <p>Set up your workspace in less than a minute.</p>
       </div>
 
-      <form method="post" class="tm-auth-form" novalidate>
+      <form method="post" class="tm-auth-form" data-auth-form novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
@@ -73,7 +66,10 @@
           {% if form.password2.errors %}<p class="tm-field-error">{{ form.password2.errors|striptags }}</p>{% endif %}
         </div>
 
-        <button type="submit" class="tm-button tm-button-primary tm-auth-submit">Create my workspace</button>
+        <button type="submit" class="tm-button tm-button-primary tm-auth-submit" data-auth-submit data-loading-label="Creating your workspace…">
+          <span data-auth-submit-label>Create my workspace</span>
+          <span class="tm-auth-spinner" aria-hidden="true"></span>
+        </button>
       </form>
 
       <p class="tm-auth-switch">

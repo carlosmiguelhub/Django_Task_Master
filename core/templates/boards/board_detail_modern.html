@@ -17,7 +17,6 @@
 
     <header class="board-hero board-detail-hero">
       <div>
-        <span class="board-eyebrow">Project board</span>
         <h1>{{ board.name }}</h1>
         <p>{{ board.description|default:"Organize priorities and keep the work moving." }}</p>
       </div>
@@ -46,7 +45,21 @@
       <div class="board-mini-stat"><strong>{{ done|length }}</strong><span>Completed</span></div>
     </div>
 
-    <div class="kanban-grid">
+    <div class="board-view-toolbar">
+      <span>Task layout</span>
+      <div class="board-view-switcher" role="group" aria-label="Task layout">
+        <button type="button" data-task-view="board" class="is-active" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>
+          Board
+        </button>
+        <button type="button" data-task-view="list" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+          List
+        </button>
+      </div>
+    </div>
+
+    <div class="kanban-grid" data-task-grid>
       <section class="kanban-column kanban-pending">
         <header class="kanban-column-head">
           <div>
@@ -139,6 +152,14 @@
             <option value="{{ value }}" {% if form.priority.value == value %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
+      </div>
+      <div>
+        <label for="id_estimated_minutes">Estimated focus time</label>
+        <div class="board-duration-input">
+          <input class="board-input" id="id_estimated_minutes" type="number" name="estimated_minutes" min="15" max="1440" step="15" value="{{ form.estimated_minutes.value|default:60 }}" required>
+          <span>minutes</span>
+        </div>
+        {% if form.estimated_minutes.errors %}<p class="board-field-error">{{ form.estimated_minutes.errors|striptags }}</p>{% endif %}
       </div>
       <div>
         <label for="id_due_date">Due date</label>

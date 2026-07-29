@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -48,6 +49,12 @@ class Task(models.Model):
 
     due_date = models.DateField(null=True, blank=True)
     due_time = models.TimeField(null=True, blank=True)
+    estimated_minutes = models.PositiveIntegerField(
+        default=60,
+        validators=[MinValueValidator(15), MaxValueValidator(1440)],
+    )
+    scheduled_start = models.DateTimeField(null=True, blank=True)
+    scheduled_end = models.DateTimeField(null=True, blank=True)
 
     status = models.CharField(
         max_length=20,

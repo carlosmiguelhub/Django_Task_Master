@@ -10,10 +10,32 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_local_env(path):
+    """Load simple KEY=VALUE pairs for local development without extra packages."""
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if value[:1] == value[-1:] and value[:1] in {"'", '"'}:
+            value = value[1:-1]
+        if key:
+            os.environ.setdefault(key, value)
+
+
+_load_local_env(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -129,8 +151,26 @@ LOGIN_URL = "/auth/login/"
 LOGIN_REDIRECT_URL = "/app/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
+# Local password-reset emails are printed in the terminal. Production can
+# override these values with SMTP-backed environment settings.
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DJANGO_DEFAULT_FROM_EMAIL",
+    "Task Master <no-reply@taskmaster.local>",
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# OpenAI is optional: the dashboard and the rest of the app remain available
+# when no key is configured.
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+OPENAI_DAILY_PLAN_MODEL = os.environ.get(
+    "OPENAI_DAILY_PLAN_MODEL",
+    "gpt-5.6-terra",
+)

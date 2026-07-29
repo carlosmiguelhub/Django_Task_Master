@@ -1,11 +1,16 @@
-from django.db import models
-
-# Create your models here.
 from django.conf import settings
 from django.db import models
 
 
 class CalendarEvent(models.Model):
+    class EventType(models.TextChoices):
+        MEETING = "meeting", "Meeting"
+        FOCUS = "focus", "Focus session"
+        CLASS = "class", "Class"
+        APPOINTMENT = "appointment", "Appointment"
+        PERSONAL = "personal", "Personal"
+        OTHER = "other", "Other"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -13,6 +18,13 @@ class CalendarEvent(models.Model):
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    event_type = models.CharField(
+        max_length=20,
+        choices=EventType.choices,
+        default=EventType.MEETING,
+    )
+    location = models.CharField(max_length=240, blank=True)
+    meeting_url = models.URLField(max_length=500, blank=True)
 
     start_at = models.DateTimeField()
     end_at = models.DateTimeField(null=True, blank=True)

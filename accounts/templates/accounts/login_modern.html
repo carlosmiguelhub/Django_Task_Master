@@ -1,29 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Sign in — Task Master{% endblock %}
 
-{% block body %}
-<div class="tm-auth-page">
-  <section class="tm-auth-story" aria-label="Task Master introduction">
-    <div class="tm-auth-story-content">
-      <div class="tm-auth-story-badge">Built for focused work</div>
-      <h1>Pick up exactly where you left off.</h1>
-      <p>Your boards, priorities, and deadlines are waiting in one clear workspace.</p>
-      <div class="tm-auth-proof">
-        <span>✓ Clear priorities</span>
-        <span>✓ Visible progress</span>
-        <span>✓ Fewer loose ends</span>
-      </div>
-    </div>
-  </section>
+{% block navbar %}
+  {% include "components/public_theme_toggle.html" %}
+{% endblock %}
 
+{% block body %}
+<div class="tm-auth-page tm-auth-page-login">
   <section class="tm-auth-form-pane">
     <div class="tm-auth-card">
+      {% include "components/auth_brand.html" %}
+
       <div class="tm-auth-heading">
         <h2>Welcome back</h2>
         <p>Sign in to continue to your workspace.</p>
       </div>
 
-      <form method="post" class="tm-auth-form" novalidate>
+      <form method="post" class="tm-auth-form" data-auth-form novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
@@ -57,10 +50,13 @@
 
         <div class="tm-form-row">
           <label class="tm-check"><input type="checkbox" name="remember_me"> Keep me signed in</label>
-          <span class="tm-field-help">Use your Task Master credentials</span>
+          <a href="{% url 'accounts:password_reset' %}" class="tm-form-link">Forgot password?</a>
         </div>
 
-        <button type="submit" class="tm-button tm-button-primary tm-auth-submit">Sign in</button>
+        <button type="submit" class="tm-button tm-button-primary tm-auth-submit" data-auth-submit data-loading-label="Signing you in…">
+          <span data-auth-submit-label>Sign in</span>
+          <span class="tm-auth-spinner" aria-hidden="true"></span>
+        </button>
       </form>
 
       <p class="tm-auth-switch">

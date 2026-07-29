@@ -1,4 +1,11 @@
-<article class="kanban-task {% if task.is_overdue %}is-overdue{% endif %}">
+<article
+  class="kanban-task {% if task.is_overdue %}is-overdue{% endif %}"
+  {% if task.status != "done" and task.due_at %}
+    data-task-timer
+    data-created-at="{{ task.created_at|date:'c' }}"
+    data-due-at="{{ task.due_at|date:'c' }}"
+  {% endif %}
+>
   <div class="kanban-task-head">
     <span class="task-priority task-priority-{{ task.priority }}">
       <i></i>{{ task.get_priority_display }}
@@ -14,21 +21,29 @@
   <div class="kanban-due {% if task.is_overdue %}danger{% endif %}">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
     <span>
-      {% if task.is_overdue %}<strong>Overdue · </strong>{% endif %}
+      {% if task.status != "done" %}<strong data-due-status>{% if task.is_overdue %}Overdue · {% endif %}</strong>{% endif %}
       {{ task.due_date|date:"M j, Y" }} at {{ task.due_time|time:"g:i A" }}
     </span>
   </div>
 
   <div class="kanban-task-progress">
-    <div class="kanban-progress-track">
-      <span style="width: {{ task.timeline_percent }}%"></span>
+    <div
+      class="kanban-progress-track"
+      role="progressbar"
+      aria-label="Task deadline elapsed"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="{{ task.timeline_percent }}"
+    >
+      <span data-timeline-bar style="width: {{ task.timeline_percent }}%"></span>
     </div>
     {% if task.status == "done" %}
       <small>{% if task.completed_late %}Completed late{% else %}Completed on time{% endif %}</small>
-    {% elif task.is_overdue %}
-      <small>Deadline passed</small>
     {% else %}
-      <small>Time elapsed</small>
+      <small class="kanban-progress-meta">
+        <span data-progress-label>{{ task.timeline_percent }}% elapsed</span>
+        <strong data-time-left>{% if task.is_overdue %}Deadline passed{% else %}Calculating time left…{% endif %}</strong>
+      </small>
     {% endif %}
   </div>
 
