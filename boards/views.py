@@ -9,6 +9,12 @@ from .forms import BoardCreateForm, TaskCreateForm, TaskUpdateForm
 from .models import Board, Task
 from django.contrib import messages
 
+from core.stored_procedures import (
+    StoredProcedureError,
+    complete_task_transaction,
+    create_task_transaction,
+)
+
 
 def _decorate_task(task, now):
     """Attach presentation-only deadline data without changing the database."""
@@ -97,11 +103,18 @@ def board_detail(request, board_id):
     if request.method == "POST":
         task_form = TaskCreateForm(request.POST)
         if task_form.is_valid():
-            task = task_form.save(commit=False)
-            task.board = board
-            task.status = Task.Status.PENDING
-            task.save()
-            return redirect("boards:detail", board_id=board.id)
+            try:
+                # Stored Procedure Transaction 1:
+                # MySQL validates ownership and inserts the pending task.
+                create_task_transaction(
+                    user_id=request.user.id,
+                    board_id=board.id,
+                    values=task_form.cleaned_data,
+                )
+            except StoredProcedureError as exc:
+                task_form.add_error(None, str(exc))
+            else:
+                return redirect("boards:detail", board_id=board.id)
     else:
         task_form = TaskCreateForm()
 
@@ -160,19 +173,15 @@ def task_complete(request, task_id):
     task = get_object_or_404(Task, id=task_id, board__owner=request.user)
 
     if task.status == Task.Status.IN_PROGRESS:
-        now = timezone.now()
-
-        due_dt = None
-        if task.due_date:
-            t = task.due_time or datetime.time(23, 59)
-            due_dt = datetime.datetime.combine(task.due_date, t)
-            due_dt = timezone.make_aware(due_dt, timezone.get_current_timezone())
-
-        task.status = Task.Status.DONE
-        task.completed_at = now
-        task.completed_late = bool(due_dt and now > due_dt)
-
-        task.save(update_fields=["status", "completed_at", "completed_late"])
+        try:
+            # Stored Procedure Transaction 2:
+            # completion metadata and unread notification cleanup commit together.
+            complete_task_transaction(
+                user_id=request.user.id,
+                task_id=task.id,
+            )
+        except StoredProcedureError as exc:
+            messages.error(request, str(exc))
 
     return redirect("boards:detail", board_id=task.board_id)
 

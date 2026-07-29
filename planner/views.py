@@ -14,6 +14,10 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from boards.models import Board, Task
+from core.stored_procedures import (
+    StoredProcedureError,
+    create_calendar_event_transaction,
+)
 
 from .models import CalendarEvent
 
@@ -246,24 +250,19 @@ def event_create(request):
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
 
-    if _is_past_date(values["start_at"]):
-        return JsonResponse(
-            {"error": "New events cannot be scheduled in the past."},
-            status=400,
+    try:
+        # Stored Procedure Transaction 3:
+        # MySQL serializes the conflict check and event insert for this user.
+        event_id = create_calendar_event_transaction(
+            user_id=request.user.id,
+            values=values,
         )
-    if _event_conflicts_with_all_day(request.user, values):
-        return JsonResponse(
-            {
-                "error": (
-                    "This date is reserved by an all-day event, or already contains "
-                    "an event that prevents creating an all-day plan."
-                )
-            },
-            status=409,
-        )
+    except StoredProcedureError as exc:
+        message = str(exc)
+        status = 409 if "conflict" in message.lower() else 400
+        return JsonResponse({"error": message}, status=status)
 
-    event = CalendarEvent.objects.create(user=request.user, **values)
-    return JsonResponse({"id": event.id, "message": "Event created."}, status=201)
+    return JsonResponse({"id": event_id, "message": "Event created."}, status=201)
 
 
 @require_POST

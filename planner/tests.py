@@ -2,7 +2,7 @@ import datetime
 import json
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -11,7 +11,10 @@ from boards.models import Board, Task
 from .models import CalendarEvent
 
 
-class PlannerTests(TestCase):
+class PlannerTests(TransactionTestCase):
+    # Event creation now runs inside a MySQL stored procedure that owns its
+    # COMMIT/ROLLBACK boundary, so these integration tests cannot use the outer
+    # atomic transaction automatically created by Django's TestCase.
     def setUp(self):
         user_model = get_user_model()
         self.user = user_model.objects.create_user("planner-user", password="test-pass-123")
